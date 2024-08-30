@@ -1,0 +1,32 @@
+.topnavContainer {
+  display: flex;
+  position: sticky;
+  top: 0;
+  min-height: 60px;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding-inline: 20px;
+  box-shadow: 1px 0px 2px 0px #c3c3c3;
+}
+
+.rightContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.img {
+  height: 24px;
+  width: 24px;
+}
+
+.cursor {
+  cursor: pointer;
+}
+
+.title {
+  color: black;
+  font-weight: 600;
+}
