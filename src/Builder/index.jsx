@@ -27,8 +27,13 @@ const WIDGETS_LIST = [
   }
 ];
 
-const INITIAL_LAYOUT_WIDGETS = [
-  {
+const INITIAL_LAYOUT_WIDGETS_META = {
+  root: {
+    Name: "Page Builder",
+    Id: "page_builder_001",
+    Widgets: ["input_1"]
+  },
+  input_1: {
     Name: "Input",
     Id: "input_1",
     WidgetId: "input",
@@ -39,131 +44,99 @@ const INITIAL_LAYOUT_WIDGETS = [
       colSpan: 2
     }
   }
-];
-
-// let WIDGET_MAP = Array.from({ length: COLUMN_COUNT * ROW_COUNT }).reduce(
-//   (arr, _, index) => {
-//     let cellCol = index % COLUMN_COUNT;
-//     let cellRow = Math.floor(index / ROW_COUNT);
-//     arr[`${cellCol}_${cellRow}`] = "";
-//     return arr;
-//   },
-//   {}
-// );
+};
 
 export function Builder() {
-  const [layoutWidgets, setLayoutWidgets] = useState(INITIAL_LAYOUT_WIDGETS);
+  const [layoutModel, setLayoutModel] = useState(INITIAL_LAYOUT_WIDGETS_META);
 
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDetail, setHoverDetail] = useState({});
   const [activeWidget, setActiveWidget] = useState({});
 
-  // const widgetCellMap = useMemo(
-  //   function getWidgetCellMap() {
-  //     layoutWidgets.forEach(({ Id, LayoutConfig }) => {
-  //       let { col, row, rowSpan, colSpan } = LayoutConfig;
-
-  //       let keys = [];
-  //       if (colSpan > 1) {
-  //         Array.from({ length: colSpan }).forEach((_, index) => {
-  //           keys.push(`${col + index}_${row}`);
-  //         });
-  //       }
-  //       if (rowSpan > 1) {
-  //         Array.from({ length: rowSpan }).forEach((_, index) => {
-  //           keys.push(`${col}_${row + index}`);
-  //         });
-  //       }
-  //       if (colSpan === 1 && rowSpan === 1) {
-  //         keys.push(`${col}_${row}`);
-  //       }
-  //       keys.forEach((key) => (WIDGET_MAP[key] = Id));
-  //     });
-  //     console.log("WIDGET_MAP", WIDGET_MAP);
-  //     return WIDGET_MAP;
-  //   },
-  //   [layoutWidgets]
-  // );
-
-  const widgetColMap = useMemo(
-    function getWidgetColMap() {
-      let colMap = Array.from({ length: COLUMN_COUNT }).map(() =>
-        Array.from({ length: ROW_COUNT }).map(() => null)
-      );
-      layoutWidgets.forEach(({ Id, LayoutConfig }) => {
-        let { col, row, rowSpan, colSpan } = LayoutConfig;
-
-        if (colSpan > 1) {
-          Array.from({ length: colSpan }).forEach((_, i) => {
-            if (rowSpan > 1) {
-              Array.from({ length: rowSpan }).forEach((_, j) => {
-                colMap[col + i][row + j] = Id;
-              });
-            } else {
-              colMap[col + i][row] = Id;
-            }
-          });
-        }
-        if (rowSpan > 1) {
-          Array.from({ length: rowSpan }).forEach((_, i) => {
-            if (colSpan > 1) {
-              Array.from({ length: colSpan }).forEach((_, j) => {
-                colMap[col + j][row + i] = Id;
-              });
-            } else {
-              colMap[col][row + i] = Id;
-            }
-          });
-        }
-        if (colSpan === 1 && rowSpan === 1) {
-          colMap[col][row] = Id;
-        }
-      });
-      console.log("widgetColMap trigerred");
-      return colMap;
-    },
-    [layoutWidgets]
-  );
-
-  // const hoverRowLimit = useMemo(
-  //   function getHoverRowLimit() {
-  //     let hoverLimit = Array.from({ length: COLUMN_COUNT }).map(() => 0);
-  //     layoutWidgets.forEach(({ LayoutConfig }) => {
-  //       let { col, row, rowSpan, colSpan } = LayoutConfig;
-  //       let rowLimit = row + rowSpan;
-  //       if (rowLimit > hoverLimit[col]) {
-  //         if (colSpan > 1) {
-  //           Array.from({ length: colSpan }).forEach((_, index) => {
-  //             hoverLimit[col + index] = rowLimit;
-  //           });
-  //         } else {
-  //           hoverLimit[col] = rowLimit;
-  //         }
-  //       }
-  //     });
-  //     console.log("hoverRowLimit", hoverLimit);
-  //     return hoverLimit;
-  //   },
-  //   [layoutWidgets]
-  // );
-
   const tempWidgetColMap = useRef(null);
-  const originLayoutWidgets = useRef(null);
-  const layoutWidgetsChanged = useRef(false);
+  const originLayoutModel = useRef(null);
+  const isLayoutModelChanged = useRef(false);
+
+  function getWidgetIds(model) {
+    return model.root.Widgets;
+  }
+
+  function setWidget(model, widget) {
+    let newModel = { ...model };
+    newModel.root.Widgets = [...getWidgetIds(newModel), widget.Id];
+    newModel[widget.Id] = widget;
+    return newModel;
+  }
+
+  function getWidgets(model) {
+    return getWidgetIds(model).map((compId) => {
+      return model[compId];
+    });
+  }
+
+  function deleteWidget(model, widgetId) {
+    let newModel = { ...model };
+    delete newModel[widgetId];
+    newModel.root.Widgets = getWidgetIds(newModel).filter(
+      (id) => id !== widgetId
+    );
+    return newModel;
+  }
+
+  function getWidgetsColMap(model) {
+    let colMap = Array.from({ length: COLUMN_COUNT }).map(() =>
+      Array.from({ length: ROW_COUNT }).map(() => null)
+    );
+    getWidgets(model).forEach(({ Id, LayoutConfig }) => {
+      let { col, row, rowSpan, colSpan } = LayoutConfig;
+
+      if (colSpan > 1) {
+        Array.from({ length: colSpan }).forEach((_, i) => {
+          if (rowSpan > 1) {
+            Array.from({ length: rowSpan }).forEach((_, j) => {
+              colMap[col + i][row + j] = Id;
+            });
+          } else {
+            colMap[col + i][row] = Id;
+          }
+        });
+      }
+      if (rowSpan > 1) {
+        Array.from({ length: rowSpan }).forEach((_, i) => {
+          if (colSpan > 1) {
+            Array.from({ length: colSpan }).forEach((_, j) => {
+              colMap[col + j][row + i] = Id;
+            });
+          } else {
+            colMap[col][row + i] = Id;
+          }
+        });
+      }
+      if (colSpan === 1 && rowSpan === 1) {
+        colMap[col][row] = Id;
+      }
+    });
+    console.log("widgetColMap trigerred");
+    return colMap;
+  }
 
   function handleDragStart(e) {
     console.log("start", e, e.active.rect.current);
     setIsDragging(true);
-    setActiveWidget({ ...e.active.data.current.widget });
-    let newLayoutWidgets = [...layoutWidgets];
-    if (e.active?.data.current.type === "DragWidgetCell") {
-      newLayoutWidgets = newLayoutWidgets.filter(
-        ({ Id }) => Id !== e.active?.data.current.widget.Id
-      );
-      setLayoutWidgets(newLayoutWidgets);
+    let widget = e.active.data.current.widget;
+    let type = e.active?.data.current.type;
+    setActiveWidget(widget);
+    let newLayoutModel = { ...layoutModel };
+    if (type === "DragWidgetCell") {
+      newLayoutModel = deleteWidget(newLayoutModel, widget.Id);
+      // let widgetMap = getWidgetsColMap(newLayoutWidgets);
+      // let { col, row, rowSpan, colSpan } = widget.LayoutConfig;
+      // widgetMap.slice(col, colSpan).for;
+
+      setLayoutModel(newLayoutModel);
     }
-    tempWidgetColMap.current = widgetColMap;
-    originLayoutWidgets.current = newLayoutWidgets;
+    tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
+    originLayoutModel.current = newLayoutModel;
   }
 
   function getFilledColMap(colMap) {
@@ -185,30 +158,20 @@ export function Builder() {
     if (!e.over) {
       return;
     }
-    // if (e.over?.data.current.type === "AddCell") {
-    //   console.log("over cell", e.over.data.current.cell);
-    //   let { rowSpan = 1, colSpan = 1 } = activeWidget?.LayoutConfig || {};
-    //   let { col } = e.over.data.current.cell;
-    //   let row = hoverRowLimit[col];
-    //   if (colSpan) {
-    //     row = Math.max(...hoverRowLimit.slice(col, col + colSpan));
-    //   }
-    //   setHoverCell({ row, col, rowSpan, colSpan });
-    // }
     if (e.over?.data.current.type === "AddCell") {
       let { rowSpan = 1, colSpan = 1 } = activeWidget?.LayoutConfig || {};
       let { col, row } = e.over.data.current.cell;
-      let overWidgetId = tempWidgetColMap.current[col][row];
-      let newLayoutWidgets = [...layoutWidgets];
-      tempWidgetColMap.current[hoverDetail.col] = widgetColMap[hoverDetail.col];
-      if (col !== hoverDetail.col && layoutWidgetsChanged) {
-        newLayoutWidgets = [...originLayoutWidgets.current];
-        setLayoutWidgets(newLayoutWidgets);
-        layoutWidgetsChanged.current = false;
+      let newLayoutModel = { ...originLayoutModel.current };
+      if (isLayoutModelChanged.current) {
+        setLayoutModel(newLayoutModel);
+        isLayoutModelChanged.current = false;
+        tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
       }
       let currentColMap = getFilledColMap(tempWidgetColMap.current[col]);
-      console.log("over cell", e.over.data.current.cell, currentColMap);
+      let overWidgetId = tempWidgetColMap.current[col][row];
+
       if (overWidgetId || row < currentColMap.length) {
+        console.log("within filled", e.over.data.current.cell, currentColMap);
         let firstFreeIndex = currentColMap.findIndex((i) => i === null);
         if (firstFreeIndex !== -1) {
           const { movableRow, movableCol } = getMovableCell({
@@ -238,15 +201,17 @@ export function Builder() {
             colSpan
           });
           console.log("isOver widget", slideWidgets, movableRow, movableCol);
-          newLayoutWidgets = newLayoutWidgets.map((widget) => {
-            if (slideWidgets.includes(widget.Id)) {
-              const newLayoutConfig = {
+          let uniqueSlideWidgets = new Set(slideWidgets);
+
+          uniqueSlideWidgets.forEach((widgetId) => {
+            let widget = newLayoutModel[widgetId];
+            newLayoutModel[widgetId] = {
+              ...widget,
+              LayoutConfig: {
                 ...widget.LayoutConfig,
-                row: row + rowSpan
-              };
-              return { ...widget, LayoutConfig: newLayoutConfig };
-            }
-            return widget;
+                row: widget.LayoutConfig.row + rowSpan
+              }
+            };
           });
           setHoverDetail({
             row: movableRow,
@@ -255,12 +220,13 @@ export function Builder() {
             colSpan
           });
           console.log(
-            "over layoutWidgets",
-            newLayoutWidgets,
+            "isOverWidget layoutModel change",
+            newLayoutModel,
             tempWidgetColMap.current[col]
           );
-          layoutWidgetsChanged.current = true;
-          setLayoutWidgets(newLayoutWidgets);
+          isLayoutModelChanged.current = true;
+          tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
+          setLayoutModel(newLayoutModel);
         }
       } else {
         let hoverRow = currentColMap.length;
@@ -298,25 +264,39 @@ export function Builder() {
       let { colSpan: widgetColSpan, rowSpan: widgetRowSpan } =
         activeWidget?.LayoutConfig || {};
       let { col, row, colSpan, rowSpan } = hoverDetail;
-      const newLayoutWidgets = [
-        ...layoutWidgets,
-        {
-          ...currentWidget,
-          WidgetId: currentWidget.WidgetId || currentWidget.Id,
-          Id: type
-            ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
-            : currentWidget.Id,
-          LayoutConfig: {
-            col,
-            colSpan: widgetColSpan || colSpan,
-            rowSpan: widgetRowSpan || rowSpan,
-            row: row
-          }
+      let widget = {
+        ...currentWidget,
+        WidgetId: currentWidget.WidgetId || currentWidget.Id,
+        Id: type
+          ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
+          : currentWidget.Id,
+        LayoutConfig: {
+          col,
+          colSpan: widgetColSpan || colSpan,
+          rowSpan: widgetRowSpan || rowSpan,
+          row: row
         }
-      ];
-      console.log("layoutWidgets", newLayoutWidgets);
+      };
+      let newLayoutModel = setWidget(layoutModel, widget);
+      // const newLayoutWidgets = [
+      //   ...layoutWidgets,
+      //   {
+      //     ...currentWidget,
+      //     WidgetId: currentWidget.WidgetId || currentWidget.Id,
+      //     Id: type
+      //       ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
+      //       : currentWidget.Id,
+      //     LayoutConfig: {
+      //       col,
+      //       colSpan: widgetColSpan || colSpan,
+      //       rowSpan: widgetRowSpan || rowSpan,
+      //       row: row
+      //     }
+      //   }
+      // ];
+      console.log("DragEnd - layoutModel", newLayoutModel);
 
-      setLayoutWidgets(newLayoutWidgets);
+      setLayoutModel(newLayoutModel);
     }
     setIsDragging(false);
     setActiveWidget({});
@@ -329,6 +309,14 @@ export function Builder() {
     setActiveWidget({});
     setHoverDetail({});
   }
+
+  const layoutWidgets = useMemo(
+    function getLayoutWidgets() {
+      return getWidgets(layoutModel);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layoutModel]
+  );
 
   return (
     <DndContext
