@@ -9,8 +9,8 @@ import {
 } from "@dnd-kit/core";
 import styles from "./builder.module.css";
 
-const COLUMN_COUNT = 12;
-const ROW_COUNT = 12;
+const COLUMN_COUNT = 36;
+const ROW_COUNT = 36;
 
 const WIDGETS_LIST = [
   {
