@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, memo, useCallback, useEffect } from "react";
 import PropTypes from "prop-types";
 import {
   DndContext,
@@ -8,22 +8,54 @@ import {
   closestCorners
 } from "@dnd-kit/core";
 import styles from "./builder.module.css";
+import { debounce } from "./util.js";
 
-const COLUMN_COUNT = 36;
-const ROW_COUNT = 36;
+const INITIAL_CONFIG = {
+  COLUMN_COUNT: 36,
+  ROW_COUNT: 100,
+  ROW_HEIGHT: 8
+};
 
 const WIDGETS_LIST = [
   {
     Name: "Input",
-    Id: "input"
+    Id: "input",
+    LayoutConfig: {
+      col: 0,
+      row: 0,
+      rowSpan: 4,
+      colSpan: 4
+    }
   },
   {
     Name: "Dropdown",
-    Id: "dropdown"
+    Id: "dropdown",
+    LayoutConfig: {
+      col: 0,
+      row: 0,
+      rowSpan: 4,
+      colSpan: 4
+    }
   },
   {
     Name: "Icon",
-    Id: "icon"
+    Id: "icon",
+    LayoutConfig: {
+      col: 0,
+      row: 0,
+      rowSpan: 3,
+      colSpan: 1
+    }
+  },
+  {
+    Name: "Card",
+    Id: "card",
+    LayoutConfig: {
+      col: 0,
+      row: 0,
+      rowSpan: 10,
+      colSpan: 4
+    }
   }
 ];
 
@@ -31,22 +63,23 @@ const INITIAL_LAYOUT_WIDGETS_META = {
   root: {
     Name: "Page Builder",
     Id: "page_builder_001",
-    Widgets: ["input_1"]
+    Widgets: ["card_1"]
   },
-  input_1: {
-    Name: "Input",
-    Id: "input_1",
-    WidgetId: "input",
+  card_1: {
+    Name: "Card",
+    Id: "card_1",
+    WidgetId: "card",
     LayoutConfig: {
       col: 0,
       row: 0,
-      rowSpan: 2,
-      colSpan: 2
+      rowSpan: 4,
+      colSpan: 4
     }
   }
 };
 
 export function Builder() {
+  const [config, setConfig] = useState(INITIAL_CONFIG);
   const [layoutModel, setLayoutModel] = useState(INITIAL_LAYOUT_WIDGETS_META);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -84,6 +117,7 @@ export function Builder() {
   }
 
   function getWidgetsColMap(model) {
+    let { COLUMN_COUNT, ROW_COUNT } = config;
     let colMap = Array.from({ length: COLUMN_COUNT }).map(() =>
       Array.from({ length: ROW_COUNT }).map(() => null)
     );
@@ -147,6 +181,7 @@ export function Builder() {
   }
 
   function getMovableCell({ col, row, rowSpan, colSpan }) {
+    let { COLUMN_COUNT, ROW_COUNT } = config;
     let movableRow = row + rowSpan > ROW_COUNT ? ROW_COUNT - rowSpan : row;
     let movableCol =
       col + colSpan > COLUMN_COUNT ? COLUMN_COUNT - colSpan : col;
@@ -318,45 +353,163 @@ export function Builder() {
     [layoutModel]
   );
 
+  let dragStyle = {};
+  if (activeWidget.Id) {
+    const { rowSpan, colSpan } = activeWidget.LayoutConfig;
+    dragStyle.width = `calc(calc(100% / ${config.COLUMN_COUNT}) * ${colSpan})`;
+    dragStyle.height = `${rowSpan * config.ROW_HEIGHT}px`;
+  }
+
   return (
-    <DndContext
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-      collisionDetection={closestCorners}
-    >
-      <div className={styles.mainContainer}>
-        <LeftNav />
-        <div
-          className={`${styles.container} ${
-            isDragging ? styles.isDragging : ""
-          }`}
-        >
-          <Cells colCount={COLUMN_COUNT} rowCount={ROW_COUNT} />
-          <LayoutWidgets widgets={layoutWidgets} />
-          <HoverCell {...hoverDetail} />
+    <div className={styles.mainLayout}>
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+        collisionDetection={closestCorners}
+      >
+        <div className={styles.mainContainer}>
+          <LeftNav />
+          <div
+            className={`${styles.container} ${
+              isDragging ? styles.isDragging : ""
+            }`}
+            style={{
+              "--col-count": config.COLUMN_COUNT,
+              "--row-height": `${config.ROW_HEIGHT}px`
+            }}
+          >
+            <Cells colCount={config.COLUMN_COUNT} rowCount={config.ROW_COUNT} />
+            <LayoutWidgets widgets={layoutWidgets} />
+            <HoverCell {...hoverDetail} />
+          </div>
         </div>
-      </div>
-      <DragOverlay dropAnimation={null}>
-        {activeWidget.Id ? (
-          activeWidget.LayoutConfig ? (
-            <WidgetCell widget={activeWidget} isOverlay={true} />
-          ) : (
-            <Widget widget={activeWidget} isOverlay={true} />
-          )
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+        <DragOverlay dropAnimation={null} style={{ ...dragStyle }}>
+          {activeWidget.Id ? (
+            <DragWidget
+              widget={activeWidget}
+              hoverDetail={hoverDetail}
+              config={config}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+      <aside>
+        <Config config={config} setConfig={setConfig} />
+      </aside>
+    </div>
   );
 }
 
-function Cells({ colCount, rowCount }) {
-  let cells = rowCount * colCount;
+function Config({ config, setConfig }) {
+  const [localConfig, setLocalConfig] = useState(config);
+  const { COLUMN_COUNT, ROW_COUNT, ROW_HEIGHT } = localConfig;
 
+  useEffect(() => {
+    setLocalConfig(config);
+  }, [config]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const updateConfigDebounced = useCallback(
+    debounce(function updateConfig(id, value) {
+      setConfig((prevState) => {
+        return { ...prevState, [id]: value };
+      });
+    }, 500),
+    []
+  );
+
+  function onChange(id, value, prefix = "") {
+    setLocalConfig((prevState) => {
+      return { ...prevState, [id]: prefix ? value + prefix : value };
+    });
+    updateConfigDebounced(id, prefix ? value + prefix : value);
+  }
+
+  function onReset(id) {
+    setLocalConfig((prevState) => {
+      return { ...prevState, [id]: INITIAL_CONFIG[id] };
+    });
+    updateConfigDebounced(id, INITIAL_CONFIG[id]);
+  }
+
+  return (
+    <div className={styles.leftNav}>
+      <Input
+        id="COLUMN_COUNT"
+        label="Column Count"
+        value={COLUMN_COUNT}
+        onChange={onChange}
+        onReset={onReset}
+        defaultValue={INITIAL_CONFIG.COLUMN_COUNT}
+      />
+      <Input
+        id="ROW_COUNT"
+        label="Row Count"
+        value={ROW_COUNT}
+        onChange={onChange}
+        onReset={onReset}
+        defaultValue={INITIAL_CONFIG.ROW_COUNT}
+      />
+      <Input
+        id="ROW_HEIGHT"
+        label="Row Height"
+        value={ROW_HEIGHT}
+        onChange={onChange}
+        onReset={onReset}
+        defaultValue={INITIAL_CONFIG.ROW_HEIGHT}
+      />
+    </div>
+  );
+}
+
+Config.propTypes = {
+  config: PropTypes.object,
+  setConfig: PropTypes.func
+};
+
+function Input({ id, label, value, defaultValue, prefix, onChange, onReset }) {
+  return (
+    <div className={styles.control}>
+      <label>
+        {label}
+        {defaultValue !== value && (
+          <a className={styles.link} onClick={() => onReset(id)}>
+            reset
+          </a>
+        )}
+      </label>
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => onChange(id, e.target.value, prefix)}
+      />
+    </div>
+  );
+}
+
+Input.propTypes = {
+  id: PropTypes.string,
+  label: PropTypes.string,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+  prefix: PropTypes.string,
+  onChange: PropTypes.func,
+  onReset: PropTypes.func
+};
+
+const Cells = memo(CellsComponent);
+
+function CellsComponent({ colCount, rowCount }) {
+  let cells = rowCount * colCount;
+  let currRow = 0;
   return Array.from({ length: cells }).map((_, index) => {
     let cellCol = index % colCount;
-    let cellRow = Math.floor(index / rowCount);
+    let cellRow = currRow;
+    if (cellCol === colCount - 1) {
+      currRow++;
+    }
     return <Cell key={index} col={cellCol} row={cellRow} />;
   });
 }
@@ -383,8 +536,8 @@ function Cell({ col, row, rowSpan = 1, colSpan = 1 }) {
         gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
     >
-      <label>c:{col}</label>
-      <label>r:{row}</label>
+      {/* <label>c:{col}</label>
+      <label>r:{row}</label> */}
     </span>
   );
 }
@@ -406,9 +559,10 @@ function HoverCell({ col, row, rowSpan = 1, colSpan = 1 }) {
       style={{
         gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
+      id="hoverCell"
     >
-      <label>c:{col}</label>
-      <label>r:{row}</label>
+      {/* <label>c:{col}</label>
+      <label>r:{row}</label> */}
     </span>
   );
 }
@@ -457,7 +611,13 @@ function Widget({ widget, isOverlay }) {
 Widget.propTypes = {
   widget: PropTypes.shape({
     Id: PropTypes.string,
-    Name: PropTypes.string
+    Name: PropTypes.string,
+    LayoutConfig: PropTypes.shape({
+      col: PropTypes.number,
+      row: PropTypes.number,
+      rowSpan: PropTypes.number,
+      colSpan: PropTypes.number
+    })
   }),
   isOverlay: PropTypes.bool
 };
@@ -488,8 +648,9 @@ function WidgetCell({ widget }) {
       {...listeners}
       {...attributes}
     >
-      <label>Widget</label>
-      <label>{widget.Id}</label>
+      <div className={styles.content}>
+        <label>{widget.Id}</label>
+      </div>
     </div>
   );
 }
@@ -505,4 +666,40 @@ WidgetCell.propTypes = {
       colSpan: PropTypes.number
     })
   })
+};
+
+function DragWidget({ widget }) {
+  return (
+    <div
+      className={styles.widgetCell}
+      style={{
+        width: "100%",
+        height: " 100%"
+      }}
+    >
+      <div className={styles.content}>
+        <label>{widget.Id}</label>
+      </div>
+    </div>
+  );
+}
+
+DragWidget.propTypes = {
+  widget: PropTypes.shape({
+    Id: PropTypes.string,
+    Name: PropTypes.string,
+    LayoutConfig: PropTypes.shape({
+      col: PropTypes.number,
+      row: PropTypes.number,
+      rowSpan: PropTypes.number,
+      colSpan: PropTypes.number
+    })
+  }),
+  hoverDetail: PropTypes.shape({
+    col: PropTypes.number,
+    row: PropTypes.number,
+    rowSpan: PropTypes.number,
+    colSpan: PropTypes.number
+  }),
+  config: PropTypes.object
 };
