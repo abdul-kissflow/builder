@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, memo, useCallback, useEffect } from "react";
+import { useMemo, useRef, useState, memo, useDeferredValue } from "react";
 import PropTypes from "prop-types";
 import {
   DndContext,
@@ -8,12 +8,14 @@ import {
   closestCorners
 } from "@dnd-kit/core";
 import styles from "./builder.module.css";
-import { debounce } from "./util.js";
+// import { debounce } from "./util.js";
+import { InputNumber, Select } from "antd";
 
 const INITIAL_CONFIG = {
   COLUMN_COUNT: 36,
   ROW_COUNT: 100,
-  ROW_HEIGHT: 8
+  ROW_HEIGHT: 8,
+  ROW_HEIGHT_UNIT: "px"
 };
 
 const WIDGETS_LIST = [
@@ -79,7 +81,8 @@ const INITIAL_LAYOUT_WIDGETS_META = {
 };
 
 export function Builder() {
-  const [config, setConfig] = useState(INITIAL_CONFIG);
+  const [configState, setConfigState] = useState(INITIAL_CONFIG);
+  const config = useDeferredValue(configState);
   const [layoutModel, setLayoutModel] = useState(INITIAL_LAYOUT_WIDGETS_META);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -353,12 +356,14 @@ export function Builder() {
     [layoutModel]
   );
 
-  let dragStyle = {};
-  if (activeWidget.Id) {
-    const { rowSpan, colSpan } = activeWidget.LayoutConfig;
-    dragStyle.width = `calc(calc(100% / ${config.COLUMN_COUNT}) * ${colSpan})`;
-    dragStyle.height = `${rowSpan * config.ROW_HEIGHT}px`;
-  }
+  let dragStyle = { height: "50px", width: "100px" };
+  // if (activeWidget.Id) {
+  // const { rowSpan, colSpan } = activeWidget.LayoutConfig;
+  // dragStyle.width = `calc(calc(100% / ${config.COLUMN_COUNT}) * ${colSpan})`;
+  // dragStyle.height = `${rowSpan * config.ROW_HEIGHT}${
+  //   config.ROW_HEIGHT_UNIT
+  // }`;
+  // }
 
   return (
     <div className={styles.mainLayout}>
@@ -377,7 +382,11 @@ export function Builder() {
             }`}
             style={{
               "--col-count": config.COLUMN_COUNT,
-              "--row-height": `${config.ROW_HEIGHT}px`
+              "--row-height": `${config.ROW_HEIGHT}${config.ROW_HEIGHT_UNIT}`,
+              gridTemplateRows:
+                config.ROW_HEIGHT_UNIT === "fr"
+                  ? `repeat(${config.ROW_COUNT}, ${config.ROW_HEIGHT}${config.ROW_HEIGHT_UNIT})`
+                  : ""
             }}
           >
             <Cells colCount={config.COLUMN_COUNT} rowCount={config.ROW_COUNT} />
@@ -385,7 +394,10 @@ export function Builder() {
             <HoverCell {...hoverDetail} />
           </div>
         </div>
-        <DragOverlay dropAnimation={null} style={{ ...dragStyle }}>
+        <DragOverlay
+          dropAnimation={null}
+          style={{ ...dragStyle, cursor: "grabbing" }}
+        >
           {activeWidget.Id ? (
             <DragWidget
               widget={activeWidget}
@@ -396,69 +408,62 @@ export function Builder() {
         </DragOverlay>
       </DndContext>
       <aside>
-        <Config config={config} setConfig={setConfig} />
+        <Config config={configState} setConfig={setConfigState} />
       </aside>
     </div>
   );
 }
 
-function Config({ config, setConfig }) {
-  const [localConfig, setLocalConfig] = useState(config);
-  const { COLUMN_COUNT, ROW_COUNT, ROW_HEIGHT } = localConfig;
+const CONTROL_TYPE = {
+  NUMBER: "number",
+  NUMBER_UNIT: "number_unit"
+};
 
-  useEffect(() => {
-    setLocalConfig(config);
-  }, [config]);
+const CONTROL_UNIT_OPTION = [
+  { value: "px", label: "px" },
+  { value: "fr", label: "fr" }
+];
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const updateConfigDebounced = useCallback(
-    debounce(function updateConfig(id, value) {
-      setConfig((prevState) => {
-        return { ...prevState, [id]: value };
-      });
-    }, 500),
-    []
-  );
+function Config({ config: localConfig, setConfig }) {
+  const { COLUMN_COUNT, ROW_COUNT, ROW_HEIGHT, ROW_HEIGHT_UNIT } = localConfig;
 
-  function onChange(id, value, prefix = "") {
-    setLocalConfig((prevState) => {
-      return { ...prevState, [id]: prefix ? value + prefix : value };
+  function onChange(id, value) {
+    setConfig((prevState) => {
+      return { ...prevState, [id]: value };
     });
-    updateConfigDebounced(id, prefix ? value + prefix : value);
-  }
-
-  function onReset(id) {
-    setLocalConfig((prevState) => {
-      return { ...prevState, [id]: INITIAL_CONFIG[id] };
-    });
-    updateConfigDebounced(id, INITIAL_CONFIG[id]);
   }
 
   return (
-    <div className={styles.leftNav}>
-      <Input
+    <div className={styles.rightNav}>
+      <Control
         id="COLUMN_COUNT"
+        type={CONTROL_TYPE.NUMBER}
         label="Column Count"
         value={COLUMN_COUNT}
         onChange={onChange}
-        onReset={onReset}
+        onReset={onChange}
         defaultValue={INITIAL_CONFIG.COLUMN_COUNT}
       />
-      <Input
+      <Control
         id="ROW_COUNT"
+        type={CONTROL_TYPE.NUMBER}
         label="Row Count"
         value={ROW_COUNT}
         onChange={onChange}
-        onReset={onReset}
+        onReset={onChange}
         defaultValue={INITIAL_CONFIG.ROW_COUNT}
       />
-      <Input
+      <Control
         id="ROW_HEIGHT"
         label="Row Height"
+        type={CONTROL_TYPE.NUMBER_UNIT}
         value={ROW_HEIGHT}
         onChange={onChange}
-        onReset={onReset}
+        onReset={onChange}
         defaultValue={INITIAL_CONFIG.ROW_HEIGHT}
+        unit={ROW_HEIGHT_UNIT}
+        defaultUnit={INITIAL_CONFIG.ROW_HEIGHT_UNIT}
+        options={CONTROL_UNIT_OPTION}
       />
     </div>
   );
@@ -469,29 +474,75 @@ Config.propTypes = {
   setConfig: PropTypes.func
 };
 
-function Input({ id, label, value, defaultValue, prefix, onChange, onReset }) {
+function Control({
+  id,
+  type,
+  label,
+  value,
+  unit,
+  options,
+  defaultValue,
+  defaultUnit,
+  onChange,
+  onReset
+}) {
   return (
     <div className={styles.control}>
       <label>
         {label}
-        {defaultValue !== value && (
-          <a className={styles.link} onClick={() => onReset(id)}>
+        {(defaultValue !== value || (unit && unit !== defaultUnit)) && (
+          <a
+            className={styles.link}
+            onClick={() => {
+              if (type === CONTROL_TYPE.NUMBER_UNIT) {
+                onReset(id + "_UNIT", defaultUnit);
+              }
+              onReset(id, defaultValue);
+            }}
+          >
             reset
           </a>
         )}
       </label>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(id, e.target.value, prefix)}
-      />
+      <div className={styles.inputContainer}>
+        <InputNumber
+          value={value}
+          onChange={(value) => {
+            onChange(id, Number(value));
+          }}
+          size="small"
+          className={styles.inputNumber}
+          changeOnBlur={false}
+        />
+        {unit && (
+          <Select
+            value={unit}
+            onChange={(e) => {
+              let { value } = JSON.parse(e);
+              // onChange(id, defaultUnitValue);
+              onChange(id + "_UNIT", value);
+            }}
+            size="small"
+          >
+            {options.map((opt) => (
+              <Select.Option key={opt.value} value={JSON.stringify(opt)}>
+                {opt.label}
+              </Select.Option>
+            ))}
+          </Select>
+        )}
+      </div>
     </div>
   );
 }
 
-Input.propTypes = {
+Control.propTypes = {
   id: PropTypes.string,
   label: PropTypes.string,
+  type: PropTypes.string,
+  unit: PropTypes.string,
+  defaultUnit: PropTypes.string,
+  options: PropTypes.array,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   prefix: PropTypes.string,

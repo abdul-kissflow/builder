@@ -1,5 +1,6 @@
 .mainLayout {
   display: flex;
+  height: 100%;
 }
 
 .mainContainer {
@@ -15,6 +16,14 @@
   padding-block: 20px;
 }
 
+.rightNav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-inline: 12px;
+  padding-block: 20px;
+}
+
 .widget {
   display: grid;
   place-items: center;
@@ -23,12 +32,14 @@
   padding-inline: 12px;
   min-height: var(--row-height);
   font-size: 12px;
+  cursor: grab;
 }
 
 .container {
   flex: 1;
   display: grid;
-  padding: 20px;
+  padding-inline: 12px;
+  padding-block: 20px;
   /* gap: 8px; */
   grid-auto-rows: var(--row-height);
   grid-template-columns: repeat(var(--col-count, 12), 1fr);
@@ -40,7 +51,7 @@
   display: grid;
   place-items: center;
   border-radius: 4px;
-  border: 1px solid rgb(220 229 234);
+  border: 0.5px solid rgb(220 229 234);
   font-size: 10px;
 }
 
@@ -67,6 +78,7 @@
   border-radius: 4px;
   min-height: var(--row-height);
   overflow: hidden;
+  cursor: grab;
 }
 
 .widgetCell .content {
@@ -99,4 +111,14 @@
 .control label .link {
   color: rgb(58, 58, 255);
   cursor: pointer;
+}
+
+.inputContainer {
+  width: 120px;
+  display: flex;
+  gap: 8px;
+}
+
+.inputNumber {
+  flex: 1;
 }
