@@ -1,62 +1,106 @@
-import { useMemo, useRef, useState, memo, useDeferredValue } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  memo,
+  useDeferredValue,
+  useEffect,
+  useCallback
+} from "react";
 import PropTypes from "prop-types";
 import {
   DndContext,
   DragOverlay,
   useDraggable,
   useDroppable,
-  closestCorners
+  closestCorners,
+  useSensor,
+  MouseSensor,
+  useSensors
 } from "@dnd-kit/core";
+import { InputNumber, Segmented, Select } from "antd";
+
 import styles from "./builder.module.css";
-// import { debounce } from "./util.js";
-import { InputNumber, Select } from "antd";
+
+const DELAY_TO_DRAG = 5;
 
 const INITIAL_CONFIG = {
   COLUMN_COUNT: 36,
   ROW_COUNT: 100,
   ROW_HEIGHT: 8,
-  ROW_HEIGHT_UNIT: "px"
+  ROW_HEIGHT_UNIT: "px",
+  MARGIN_TYPE: "default"
+};
+
+const WIDGETS_TYPE = {
+  INPUT: "input",
+  DROPDOWN: "dropdown",
+  ICON: "icon",
+  CARD: "card"
+};
+
+const WIDGETS_CONFIG = {
+  [WIDGETS_TYPE.INPUT]: {
+    minRowSpan: 4,
+    minColSpan: 4
+  },
+  [WIDGETS_TYPE.DROPDOWN]: {
+    minRowSpan: 4,
+    minColSpan: 4
+  },
+  [WIDGETS_TYPE.ICON]: {
+    minRowSpan: 3,
+    minColSpan: 2
+  },
+  [WIDGETS_TYPE.CARD]: {
+    minRowSpan: 10,
+    minColSpan: 4
+  }
 };
 
 const WIDGETS_LIST = [
   {
     Name: "Input",
     Id: "input",
+    Type: WIDGETS_TYPE.INPUT,
     LayoutConfig: {
       col: 0,
       row: 0,
-      rowSpan: 4,
-      colSpan: 4
+      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minColSpan,
+      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minRowSpan
     }
   },
   {
     Name: "Dropdown",
     Id: "dropdown",
+    Type: WIDGETS_TYPE.DROPDOWN,
     LayoutConfig: {
       col: 0,
       row: 0,
-      rowSpan: 4,
-      colSpan: 4
+      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.DROPDOWN].minColSpan,
+      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.DROPDOWN].minRowSpan
     }
   },
   {
     Name: "Icon",
     Id: "icon",
+    Type: WIDGETS_TYPE.ICON,
     LayoutConfig: {
       col: 0,
       row: 0,
-      rowSpan: 3,
-      colSpan: 1
+      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.ICON].minColSpan,
+      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.ICON].minRowSpan
     }
   },
   {
     Name: "Card",
     Id: "card",
+    Type: WIDGETS_TYPE.CARD,
     LayoutConfig: {
       col: 0,
       row: 0,
-      rowSpan: 10,
-      colSpan: 4
+      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.CARD].minColSpan,
+      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.CARD].minRowSpan
     }
   }
 ];
@@ -68,33 +112,68 @@ const INITIAL_LAYOUT_WIDGETS_META = {
     Widgets: ["card_1"]
   },
   card_1: {
-    Name: "Card",
-    Id: "card_1",
-    WidgetId: "card",
-    LayoutConfig: {
-      col: 0,
-      row: 0,
-      rowSpan: 4,
-      colSpan: 4
-    }
+    ...WIDGETS_LIST[3],
+    Id: "card_1"
   }
+};
+
+const CONTROL_TYPE = {
+  NUMBER: "number",
+  NUMBER_UNIT: "number_unit",
+  TOGGLE: "toggle"
+};
+
+const CONTROL_UNIT_OPTION = [
+  { value: "px", label: "px" },
+  { value: "fr", label: "fr" }
+];
+
+const CONTROL_MARGIN_OPTION = [
+  { value: "default", label: "Default" },
+  { value: "none", label: "None" }
+];
+
+const RESIZE_DIRECTION = {
+  LEFT: "left",
+  TOP: "top",
+  RIGHT: "right",
+  BOTTOM: "bottom"
 };
 
 export function Builder() {
   const [configState, setConfigState] = useState(INITIAL_CONFIG);
   const config = useDeferredValue(configState);
   const [layoutModel, setLayoutModel] = useState(INITIAL_LAYOUT_WIDGETS_META);
+  const [selectedWidget, setSelectedWidget] = useState(
+    INITIAL_LAYOUT_WIDGETS_META.root.Widgets[0]
+  );
 
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDetail, setHoverDetail] = useState({});
   const [activeWidget, setActiveWidget] = useState({});
 
-  const tempWidgetColMap = useRef(null);
   const originLayoutModel = useRef(null);
-  const isLayoutModelChanged = useRef(false);
+  let containerRef = useRef(null);
+  let widgetPosRef = useRef({
+    x: 0,
+    y: 0
+  });
+  let mousePosRef = useRef({
+    x: 0,
+    y: 0
+  });
+
+  const { COLUMN_COUNT, ROW_COUNT, ROW_HEIGHT, ROW_HEIGHT_UNIT, MARGIN_TYPE } =
+    config;
 
   function getWidgetIds(model) {
     return model.root.Widgets;
+  }
+
+  function getWidgets(model) {
+    return getWidgetIds(model).map((compId) => {
+      return model[compId];
+    });
   }
 
   function setWidget(model, widget) {
@@ -102,12 +181,6 @@ export function Builder() {
     newModel.root.Widgets = [...getWidgetIds(newModel), widget.Id];
     newModel[widget.Id] = widget;
     return newModel;
-  }
-
-  function getWidgets(model) {
-    return getWidgetIds(model).map((compId) => {
-      return model[compId];
-    });
   }
 
   function deleteWidget(model, widgetId) {
@@ -119,177 +192,106 @@ export function Builder() {
     return newModel;
   }
 
-  function getWidgetsColMap(model) {
-    let { COLUMN_COUNT, ROW_COUNT } = config;
-    let colMap = Array.from({ length: COLUMN_COUNT }).map(() =>
-      Array.from({ length: ROW_COUNT }).map(() => null)
-    );
-    getWidgets(model).forEach(({ Id, LayoutConfig }) => {
-      let { col, row, rowSpan, colSpan } = LayoutConfig;
+  function onResizeWidget(widgetId, layoutConfig) {
+    let newLayoutModel = { ...layoutModel };
+    newLayoutModel[widgetId] = {
+      ...newLayoutModel[widgetId],
+      LayoutConfig: layoutConfig
+    };
+    setLayoutModel(newLayoutModel);
+    setSelectedWidget(widgetId);
+  }
 
-      if (colSpan > 1) {
-        Array.from({ length: colSpan }).forEach((_, i) => {
-          if (rowSpan > 1) {
-            Array.from({ length: rowSpan }).forEach((_, j) => {
-              colMap[col + i][row + j] = Id;
-            });
-          } else {
-            colMap[col + i][row] = Id;
-          }
-        });
-      }
-      if (rowSpan > 1) {
-        Array.from({ length: rowSpan }).forEach((_, i) => {
-          if (colSpan > 1) {
-            Array.from({ length: colSpan }).forEach((_, j) => {
-              colMap[col + j][row + i] = Id;
-            });
-          } else {
-            colMap[col][row + i] = Id;
-          }
-        });
-      }
-      if (colSpan === 1 && rowSpan === 1) {
-        colMap[col][row] = Id;
-      }
-    });
-    console.log("widgetColMap trigerred");
-    return colMap;
+  function onDeleteWidget(widgetId) {
+    let newLayoutModel = { ...layoutModel };
+    setLayoutModel(deleteWidget(newLayoutModel, widgetId));
+    setSelectedWidget("");
   }
 
   function handleDragStart(e) {
-    console.log("start", e, e.active.rect.current);
-    setIsDragging(true);
     let widget = e.active.data.current.widget;
-    let type = e.active?.data.current.type;
+    const dragWidget = document.querySelector(`[id=${widget.Id}]`);
+    const containerLeft = containerRef.current.offsetLeft;
+    const containerTop = containerRef.current.offsetTop;
+    console.dir(dragWidget);
+    widgetPosRef.current.x = containerLeft - dragWidget.offsetLeft;
+    widgetPosRef.current.y = containerTop - dragWidget.offsetTop;
+    console.log("start", widgetPosRef.current, e, e.active.rect.current);
+    setIsDragging(true);
     setActiveWidget(widget);
     let newLayoutModel = { ...layoutModel };
+    let type = e.active?.data.current.type;
     if (type === "DragWidgetCell") {
       newLayoutModel = deleteWidget(newLayoutModel, widget.Id);
-      // let widgetMap = getWidgetsColMap(newLayoutWidgets);
-      // let { col, row, rowSpan, colSpan } = widget.LayoutConfig;
-      // widgetMap.slice(col, colSpan).for;
-
       setLayoutModel(newLayoutModel);
+      let { row, col, rowSpan = 1, colSpan = 1 } = widget?.LayoutConfig || {};
+      setHoverDetail({
+        row,
+        col,
+        rowSpan,
+        colSpan
+      });
     }
-    tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
     originLayoutModel.current = newLayoutModel;
   }
 
-  function getFilledColMap(colMap) {
-    let lastWidgetIndex = colMap.findLastIndex((item) => item !== null);
-    let filledColMap =
-      lastWidgetIndex !== -1 ? colMap.slice(0, lastWidgetIndex + 1) : [];
-    return filledColMap;
-  }
+  function handleDragMove(e) {
+    const { x: activeWidgetX, y: activeWidgetY } = widgetPosRef.current;
 
-  function getMovableCell({ col, row, rowSpan, colSpan }) {
-    let { COLUMN_COUNT, ROW_COUNT } = config;
-    let movableRow = row + rowSpan > ROW_COUNT ? ROW_COUNT - rowSpan : row;
-    let movableCol =
-      col + colSpan > COLUMN_COUNT ? COLUMN_COUNT - colSpan : col;
-    return { movableRow, movableCol };
+    const relative = {
+      x: e.delta.x - activeWidgetX,
+      y: e.delta.y - activeWidgetY
+    };
+    mousePosRef.current.x = relative.x;
+    mousePosRef.current.y = relative.y;
+    console.log("handleDragMove", e, mousePosRef.current);
+
+    if (e.over?.data.current.type === "AddCell") {
+      let containerWidth = containerRef.current.clientWidth;
+      let containerHeight = containerRef.current.clientHeight;
+
+      let { rowSpan = 1, colSpan = 1 } = activeWidget?.LayoutConfig || {};
+      let cellWidth = containerWidth / COLUMN_COUNT;
+      let cellHeight =
+        ROW_HEIGHT_UNIT === "px" ? ROW_HEIGHT : containerHeight / ROW_COUNT;
+
+      let col = Math.floor(mousePosRef.current.x / cellWidth);
+      let row = Math.floor(mousePosRef.current.y / cellHeight);
+
+      if (mousePosRef.current.x < 0) {
+        col = 0;
+      }
+      if (mousePosRef.current.x > containerWidth) {
+        col = COLUMN_COUNT - 1;
+      }
+      if (mousePosRef.current.y < 0) {
+        row = 0;
+      }
+      if (mousePosRef.current.y > containerHeight) {
+        row = ROW_COUNT - 1;
+      }
+
+      if (row + rowSpan >= ROW_COUNT) {
+        row = ROW_COUNT - rowSpan;
+      }
+
+      if (col + colSpan >= COLUMN_COUNT) {
+        col = COLUMN_COUNT - colSpan;
+      }
+
+      setHoverDetail({
+        row,
+        col,
+        rowSpan,
+        colSpan
+      });
+    }
   }
 
   function handleDragOver(e) {
     console.log("over", e);
     if (!e.over) {
       return;
-    }
-    if (e.over?.data.current.type === "AddCell") {
-      let { rowSpan = 1, colSpan = 1 } = activeWidget?.LayoutConfig || {};
-      let { col, row } = e.over.data.current.cell;
-      let newLayoutModel = { ...originLayoutModel.current };
-      if (isLayoutModelChanged.current) {
-        setLayoutModel(newLayoutModel);
-        isLayoutModelChanged.current = false;
-        tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
-      }
-      let currentColMap = getFilledColMap(tempWidgetColMap.current[col]);
-      let overWidgetId = tempWidgetColMap.current[col][row];
-
-      if (overWidgetId || row < currentColMap.length) {
-        console.log("within filled", e.over.data.current.cell, currentColMap);
-        let firstFreeIndex = currentColMap.findIndex((i) => i === null);
-        if (firstFreeIndex !== -1) {
-          const { movableRow, movableCol } = getMovableCell({
-            row: firstFreeIndex,
-            col,
-            rowSpan,
-            colSpan
-          });
-          setHoverDetail({
-            row: movableRow,
-            col: movableCol,
-            rowSpan,
-            colSpan
-          });
-        } else {
-          let slideWidgetIndex = currentColMap.findIndex(
-            (id) => id === overWidgetId
-          );
-          let movableRowIndex = slideWidgetIndex;
-
-          let slideWidgets = currentColMap.slice(slideWidgetIndex);
-
-          const { movableRow, movableCol } = getMovableCell({
-            row: movableRowIndex,
-            col,
-            rowSpan,
-            colSpan
-          });
-          console.log("isOver widget", slideWidgets, movableRow, movableCol);
-          let uniqueSlideWidgets = new Set(slideWidgets);
-
-          uniqueSlideWidgets.forEach((widgetId) => {
-            let widget = newLayoutModel[widgetId];
-            newLayoutModel[widgetId] = {
-              ...widget,
-              LayoutConfig: {
-                ...widget.LayoutConfig,
-                row: widget.LayoutConfig.row + rowSpan
-              }
-            };
-          });
-          setHoverDetail({
-            row: movableRow,
-            col: movableCol,
-            rowSpan,
-            colSpan
-          });
-          console.log(
-            "isOverWidget layoutModel change",
-            newLayoutModel,
-            tempWidgetColMap.current[col]
-          );
-          isLayoutModelChanged.current = true;
-          tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
-          setLayoutModel(newLayoutModel);
-        }
-      } else {
-        let hoverRow = currentColMap.length;
-        let otherColMaps = tempWidgetColMap.current
-          .slice(col, col + colSpan)
-          .map((colMap) => {
-            return getFilledColMap(colMap);
-          });
-        if (colSpan) {
-          hoverRow = Math.max(...otherColMaps.map((colMap) => colMap.length));
-        }
-        const { movableRow, movableCol } = getMovableCell({
-          row: hoverRow,
-          col,
-          rowSpan,
-          colSpan
-        });
-        setHoverDetail({
-          row: movableRow,
-          col: movableCol,
-          rowSpan,
-          colSpan
-        });
-        console.log("hover", hoverRow);
-      }
     }
   }
 
@@ -304,7 +306,7 @@ export function Builder() {
       let { col, row, colSpan, rowSpan } = hoverDetail;
       let widget = {
         ...currentWidget,
-        WidgetId: currentWidget.WidgetId || currentWidget.Id,
+        Type: currentWidget.Type,
         Id: type
           ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
           : currentWidget.Id,
@@ -316,25 +318,16 @@ export function Builder() {
         }
       };
       let newLayoutModel = setWidget(layoutModel, widget);
-      // const newLayoutWidgets = [
-      //   ...layoutWidgets,
-      //   {
-      //     ...currentWidget,
-      //     WidgetId: currentWidget.WidgetId || currentWidget.Id,
-      //     Id: type
-      //       ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
-      //       : currentWidget.Id,
-      //     LayoutConfig: {
-      //       col,
-      //       colSpan: widgetColSpan || colSpan,
-      //       rowSpan: widgetRowSpan || rowSpan,
-      //       row: row
-      //     }
-      //   }
-      // ];
       console.log("DragEnd - layoutModel", newLayoutModel);
-
       setLayoutModel(newLayoutModel);
+      setSelectedWidget(widget.Id);
+      if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - (row + rowSpan) < 10) {
+        console.log("adding rows");
+        setConfigState((prevState) => ({
+          ...prevState,
+          ROW_COUNT: ROW_COUNT + 20
+        }));
+      }
     }
     setIsDragging(false);
     setActiveWidget({});
@@ -356,20 +349,22 @@ export function Builder() {
     [layoutModel]
   );
 
-  let dragStyle = { height: "50px", width: "100px" };
-  // if (activeWidget.Id) {
-  // const { rowSpan, colSpan } = activeWidget.LayoutConfig;
-  // dragStyle.width = `calc(calc(100% / ${config.COLUMN_COUNT}) * ${colSpan})`;
-  // dragStyle.height = `${rowSpan * config.ROW_HEIGHT}${
-  //   config.ROW_HEIGHT_UNIT
-  // }`;
-  // }
+  console.log("hover", hoverDetail, selectedWidget, config);
+
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: {
+      distance: DELAY_TO_DRAG
+    }
+  });
+  const sensors = useSensors(mouseSensor);
 
   return (
     <div className={styles.mainLayout}>
       <DndContext
+        sensors={sensors}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
         collisionDetection={closestCorners}
@@ -377,34 +372,70 @@ export function Builder() {
         <div className={styles.mainContainer}>
           <LeftNav />
           <div
-            className={`${styles.container} ${
-              isDragging ? styles.isDragging : ""
-            }`}
             style={{
-              "--col-count": config.COLUMN_COUNT,
-              "--row-height": `${config.ROW_HEIGHT}${config.ROW_HEIGHT_UNIT}`,
-              gridTemplateRows:
-                config.ROW_HEIGHT_UNIT === "fr"
-                  ? `repeat(${config.ROW_COUNT}, ${config.ROW_HEIGHT}${config.ROW_HEIGHT_UNIT})`
-                  : ""
+              height: "100%",
+              width: "100%",
+              paddingBlock: "20px",
+              paddingInline: "12px"
             }}
           >
-            <Cells colCount={config.COLUMN_COUNT} rowCount={config.ROW_COUNT} />
-            <LayoutWidgets widgets={layoutWidgets} />
-            <HoverCell {...hoverDetail} />
+            <div
+              ref={containerRef}
+              className={`${styles.container} ${
+                isDragging ? styles.isDragging : ""
+              }`}
+              style={{
+                height: "100%",
+                width: "100%",
+                "--col-count": COLUMN_COUNT,
+                "--row-height": `${ROW_HEIGHT}${ROW_HEIGHT_UNIT}`,
+                gridTemplateRows:
+                  ROW_HEIGHT_UNIT === "fr"
+                    ? `repeat(${ROW_COUNT}, ${ROW_HEIGHT}${ROW_HEIGHT_UNIT})`
+                    : ""
+              }}
+              onMouseDown={() => {
+                console.log("selected none");
+                setSelectedWidget("");
+              }}
+            >
+              <DroppableArea
+                colCount={COLUMN_COUNT}
+                rowCount={ROW_COUNT}
+                rowHeight={
+                  ROW_HEIGHT_UNIT === "px"
+                    ? ROW_HEIGHT
+                    : containerRef.current?.clientHeight / ROW_COUNT
+                }
+              />
+              <LayoutWidgets
+                widgets={layoutWidgets}
+                selectedWidget={selectedWidget}
+                onSelectWidget={setSelectedWidget}
+                cellWidth={containerRef.current?.clientWidth / COLUMN_COUNT}
+                cellHeight={
+                  ROW_HEIGHT_UNIT === "px"
+                    ? ROW_HEIGHT
+                    : containerRef.current?.clientHeight / ROW_COUNT
+                }
+                colCount={COLUMN_COUNT}
+                rowCount={ROW_COUNT}
+                marginType={MARGIN_TYPE}
+                onResizeWidget={onResizeWidget}
+                onDeleteWidget={onDeleteWidget}
+              />
+              <HoverCell {...hoverDetail} />
+            </div>
           </div>
         </div>
-        <DragOverlay
-          dropAnimation={null}
-          style={{ ...dragStyle, cursor: "grabbing" }}
-        >
-          {activeWidget.Id ? (
+        <DragOverlay dropAnimation={null} style={{ cursor: "grabbing" }}>
+          {/* {activeWidget.Id ? (
             <DragWidget
               widget={activeWidget}
               hoverDetail={hoverDetail}
               config={config}
             />
-          ) : null}
+          ) : null} */}
         </DragOverlay>
       </DndContext>
       <aside>
@@ -414,18 +445,9 @@ export function Builder() {
   );
 }
 
-const CONTROL_TYPE = {
-  NUMBER: "number",
-  NUMBER_UNIT: "number_unit"
-};
-
-const CONTROL_UNIT_OPTION = [
-  { value: "px", label: "px" },
-  { value: "fr", label: "fr" }
-];
-
 function Config({ config: localConfig, setConfig }) {
-  const { COLUMN_COUNT, ROW_COUNT, ROW_HEIGHT, ROW_HEIGHT_UNIT } = localConfig;
+  const { COLUMN_COUNT, ROW_COUNT, ROW_HEIGHT, ROW_HEIGHT_UNIT, MARGIN_TYPE } =
+    localConfig;
 
   function onChange(id, value) {
     setConfig((prevState) => {
@@ -464,6 +486,16 @@ function Config({ config: localConfig, setConfig }) {
         unit={ROW_HEIGHT_UNIT}
         defaultUnit={INITIAL_CONFIG.ROW_HEIGHT_UNIT}
         options={CONTROL_UNIT_OPTION}
+      />
+      <Control
+        id="MARGIN_TYPE"
+        type={CONTROL_TYPE.TOGGLE}
+        label="Margin"
+        value={MARGIN_TYPE}
+        onChange={onChange}
+        onReset={onChange}
+        defaultValue={INITIAL_CONFIG.MARGIN_TYPE}
+        options={CONTROL_MARGIN_OPTION}
       />
     </div>
   );
@@ -505,21 +537,31 @@ function Control({
         )}
       </label>
       <div className={styles.inputContainer}>
-        <InputNumber
-          value={value}
-          onChange={(value) => {
-            onChange(id, Number(value));
-          }}
-          size="small"
-          className={styles.inputNumber}
-          changeOnBlur={false}
-        />
+        {[CONTROL_TYPE.NUMBER, CONTROL_TYPE.NUMBER_UNIT].includes(type) && (
+          <InputNumber
+            value={value}
+            onChange={(value) => {
+              onChange(id, Number(value));
+            }}
+            size="small"
+            className={styles.inputNumber}
+            changeOnBlur={false}
+          />
+        )}
+        {[CONTROL_TYPE.TOGGLE].includes(type) && (
+          <Segmented
+            value={value}
+            onChange={(value) => {
+              onChange(id, value);
+            }}
+            options={options}
+          />
+        )}
         {unit && (
           <Select
             value={unit}
             onChange={(e) => {
               let { value } = JSON.parse(e);
-              // onChange(id, defaultUnitValue);
               onChange(id + "_UNIT", value);
             }}
             size="small"
@@ -550,54 +592,38 @@ Control.propTypes = {
   onReset: PropTypes.func
 };
 
-const Cells = memo(CellsComponent);
+const DroppableArea = memo(DroppableAreaComponent);
 
-function CellsComponent({ colCount, rowCount }) {
-  let cells = rowCount * colCount;
-  let currRow = 0;
-  return Array.from({ length: cells }).map((_, index) => {
-    let cellCol = index % colCount;
-    let cellRow = currRow;
-    if (cellCol === colCount - 1) {
-      currRow++;
-    }
-    return <Cell key={index} col={cellCol} row={cellRow} />;
-  });
-}
-
-function Cell({ col, row, rowSpan = 1, colSpan = 1 }) {
+function DroppableAreaComponent({ colCount, rowCount, rowHeight }) {
   const { setNodeRef } = useDroppable({
-    id: `${col}_${row}`,
+    id: `container001`,
     data: {
-      cell: {
-        col,
-        row,
-        rowSpan,
-        colSpan
-      },
+      id: "container001",
       type: "AddCell"
     }
   });
 
   return (
-    <span
+    <div
       ref={setNodeRef}
-      className={styles.cell}
+      id={"container001"}
       style={{
-        gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
+        height: "100%",
+        width: "100%",
+        backgroundImage: `linear-gradient(rgb(220 229 234), rgb(220 229 234)), linear-gradient(0deg, rgb(220 229 234) 1px, transparent 1px, transparent 100%), linear-gradient(rgb(220 229 234), rgb(220 229 234)), linear-gradient(90deg, rgb(220 229 234) 1px, transparent 1px, transparent 100%)`,
+        backgroundPosition: `0px 0px, 0px 0px, 100% 0px, 0px 0px`,
+        backgroundSize: `100% 1px, 100% ${rowHeight}px, 1px 100%, calc(100% / ${colCount}) 100%`,
+        backgroundRepeat: `no-repeat, repeat-y, no-repeat, repeat-x`,
+        gridArea: `1 / 1 / span ${rowCount} / span ${colCount}`
       }}
-    >
-      {/* <label>c:{col}</label>
-      <label>r:{row}</label> */}
-    </span>
+    ></div>
   );
 }
 
-Cell.propTypes = {
-  col: PropTypes.number,
-  row: PropTypes.number,
-  rowSpan: PropTypes.number,
-  colSpan: PropTypes.number
+DroppableAreaComponent.propTypes = {
+  colCount: PropTypes.number,
+  rowCount: PropTypes.number,
+  rowHeight: PropTypes.number
 };
 
 function HoverCell({ col, row, rowSpan = 1, colSpan = 1 }) {
@@ -611,10 +637,7 @@ function HoverCell({ col, row, rowSpan = 1, colSpan = 1 }) {
         gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       id="hoverCell"
-    >
-      {/* <label>c:{col}</label>
-      <label>r:{row}</label> */}
-    </span>
+    />
   );
 }
 
@@ -652,6 +675,7 @@ function Widget({ widget, isOverlay }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
+      id={widget.Id}
     >
       <label>Widget</label>
       <label>{widget.Name}</label>
@@ -663,6 +687,7 @@ Widget.propTypes = {
   widget: PropTypes.shape({
     Id: PropTypes.string,
     Name: PropTypes.string,
+    Type: PropTypes.string,
     LayoutConfig: PropTypes.shape({
       col: PropTypes.number,
       row: PropTypes.number,
@@ -673,14 +698,49 @@ Widget.propTypes = {
   isOverlay: PropTypes.bool
 };
 
-function LayoutWidgets({ widgets }) {
+function LayoutWidgets({
+  widgets,
+  cellWidth,
+  cellHeight,
+  selectedWidget,
+  onSelectWidget,
+  onResizeWidget,
+  onDeleteWidget,
+  colCount,
+  rowCount,
+  marginType
+}) {
   return widgets.map((widget) => {
-    return <WidgetCell key={widget.Id} widget={widget} />;
+    return (
+      <WidgetCell
+        key={widget.Id}
+        widget={widget}
+        cellWidth={cellWidth}
+        cellHeight={cellHeight}
+        selected={selectedWidget === widget.Id}
+        onSelect={onSelectWidget}
+        onResize={onResizeWidget}
+        onDelete={onDeleteWidget}
+        colCount={colCount}
+        rowCount={rowCount}
+        marginType={marginType}
+      />
+    );
   });
 }
 
-function WidgetCell({ widget }) {
-  const { col, row, rowSpan, colSpan } = widget.LayoutConfig;
+function WidgetCell({
+  widget,
+  selected,
+  onSelect,
+  onResize,
+  onDelete,
+  cellWidth,
+  cellHeight,
+  colCount,
+  rowCount,
+  marginType
+}) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: widget.Id,
     data: {
@@ -689,18 +749,257 @@ function WidgetCell({ widget }) {
     }
   });
 
+  const [widgetLayoutConfig, setWidgetLayoutConfig] = useState(
+    widget.LayoutConfig
+  );
+  const [isResizing, setIsResizing] = useState(false);
+
+  const resizeDirection = useRef(null);
+  const resizeStarting = useRef(null);
+
+  const { col, row, colSpan, rowSpan } = widgetLayoutConfig;
+
+  useEffect(() => {
+    setWidgetLayoutConfig(widget.LayoutConfig);
+  }, [widget]);
+
+  const onMouseDown = useCallback(function onHeaderMouseDownFunction(e) {
+    if (e.target.dataset.resizer) {
+      e.stopPropagation();
+      switch (e.target.dataset.resizer) {
+        case RESIZE_DIRECTION.LEFT:
+        case RESIZE_DIRECTION.RIGHT:
+          resizeStarting.current = e.screenX;
+          break;
+        case RESIZE_DIRECTION.TOP:
+        case RESIZE_DIRECTION.BOTTOM:
+          resizeStarting.current = e.screenY;
+          break;
+        default:
+          null;
+      }
+      resizeDirection.current = e.target.dataset.resizer;
+      console.log(
+        "mouse down",
+        resizeDirection.current,
+        resizeStarting.current
+      );
+      setIsResizing(true);
+    }
+  }, []);
+
+  const onWindowMouseMove = useCallback(
+    function onWindowMouseMoveFunction(e) {
+      if (isResizing) {
+        let { col, row, colSpan, rowSpan } = widget.LayoutConfig;
+        let { minColSpan, minRowSpan } = WIDGETS_CONFIG[widget.Type];
+        switch (resizeDirection.current) {
+          case RESIZE_DIRECTION.LEFT:
+            {
+              const diff =
+                (window.isRTL ? -1 : 1) * (e.screenX - resizeStarting.current);
+              let noOfCol = Math.round(Math.abs(diff) / cellWidth);
+              let isLeft = Math.sign(diff) < 0;
+
+              if (isLeft) {
+                col = col - noOfCol;
+                colSpan = colSpan + noOfCol;
+              } else {
+                col = col + noOfCol;
+                colSpan = colSpan - noOfCol;
+              }
+
+              if (col < 0 || colSpan > colCount || colSpan < minColSpan) {
+                return;
+              }
+
+              setWidgetLayoutConfig((prevState) => ({
+                ...prevState,
+                col: col,
+                colSpan: colSpan
+              }));
+              console.log(
+                "move left",
+                diff,
+                noOfCol,
+                isLeft,
+                col,
+                colSpan,
+                minColSpan
+              );
+            }
+            break;
+          case RESIZE_DIRECTION.TOP:
+            {
+              const diff = e.screenY - resizeStarting.current;
+              let noOfRow = Math.round(Math.abs(diff) / cellHeight);
+              let isTop = Math.sign(diff) < 0;
+
+              if (isTop) {
+                row = row - noOfRow;
+                rowSpan = rowSpan + noOfRow;
+              } else {
+                row = row + noOfRow;
+                rowSpan = rowSpan - noOfRow;
+              }
+
+              if (row < 0 || rowSpan > rowCount || rowSpan < minRowSpan) {
+                return;
+              }
+              setWidgetLayoutConfig((prevState) => ({
+                ...prevState,
+                row,
+                rowSpan
+              }));
+              console.log("move left", diff, noOfRow, isTop);
+            }
+            break;
+          case RESIZE_DIRECTION.RIGHT:
+            {
+              const diff =
+                (window.isRTL ? -1 : 1) * (e.screenX - resizeStarting.current);
+              let noOfCol = Math.round(Math.abs(diff) / cellWidth);
+              let isRight = Math.sign(diff) > 0;
+
+              if (isRight) {
+                colSpan = colSpan + noOfCol;
+              } else {
+                colSpan = colSpan - noOfCol;
+              }
+
+              if (colSpan > colCount || colSpan < minColSpan) {
+                return;
+              }
+
+              setWidgetLayoutConfig((prevState) => ({
+                ...prevState,
+                colSpan
+              }));
+              console.log("move right", diff, noOfCol, isRight);
+            }
+            break;
+          case RESIZE_DIRECTION.BOTTOM:
+            {
+              const diff = e.screenY - resizeStarting.current;
+              let noOfRow = Math.round(Math.abs(diff) / cellHeight);
+              let isBottom = Math.sign(diff) > 0;
+
+              if (isBottom) {
+                rowSpan = rowSpan + noOfRow;
+              } else {
+                rowSpan = rowSpan - noOfRow;
+              }
+
+              if (rowSpan > rowCount || rowSpan < minRowSpan) {
+                return;
+              }
+
+              setWidgetLayoutConfig((prevState) => ({
+                ...prevState,
+                rowSpan
+              }));
+              console.log("move bottom", diff, noOfRow, isBottom);
+            }
+            break;
+          default:
+            null;
+        }
+      }
+    },
+    [
+      cellHeight,
+      cellWidth,
+      colCount,
+      isResizing,
+      rowCount,
+      widget.LayoutConfig,
+      widget.Type,
+      widgetLayoutConfig
+    ]
+  );
+
+  const onWindowMouseUp = useCallback(
+    function onWindowMouseUp() {
+      if (isResizing) {
+        setIsResizing(false);
+        onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);
+        resizeStarting.current = null;
+        resizeDirection.current = null;
+      }
+    },
+    [isResizing, onResize, widget.Id, widgetLayoutConfig]
+  );
+
+  useEffect(
+    function onWindowMouseChange() {
+      window.addEventListener("mousemove", onWindowMouseMove);
+      window.addEventListener("mouseup", onWindowMouseUp);
+      return () => {
+        window.removeEventListener("mousemove", onWindowMouseMove);
+        window.removeEventListener("mouseup", onWindowMouseUp);
+      };
+    },
+    [onWindowMouseMove, onWindowMouseUp]
+  );
+
+  console.log("pos", widgetLayoutConfig);
+
   return (
     <div
-      className={styles.widgetCell}
+      className={`${styles.widgetCell} ${selected ? styles.selected : ""} ${
+        marginType === "default" ? styles.defaultMargin : ""
+      }`}
       style={{
         gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       ref={setNodeRef}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(widget.Id);
+      }}
+      onKeyDown={(e) => {
+        console.log("delete", e);
+        if (e.key === "Backspace") {
+          onDelete(widget.Id);
+        }
+      }}
+      id={widget.Id}
       {...listeners}
       {...attributes}
     >
       <div className={styles.content}>
         <label>{widget.Id}</label>
+      </div>
+      <div
+        className={`${styles.overlayContainer} ${
+          isResizing ? styles.resizing : ""
+        }`}
+        onMouseDown={onMouseDown}
+      >
+        {selected && (
+          <>
+            <div
+              className={`${styles.resizer} ${styles.left}`}
+              data-resizer={RESIZE_DIRECTION.LEFT}
+              data-active={resizeDirection.current === RESIZE_DIRECTION.LEFT}
+            />
+            <div
+              className={`${styles.resizer} ${styles.top}`}
+              data-resizer={RESIZE_DIRECTION.TOP}
+              data-active={resizeDirection.current === RESIZE_DIRECTION.TOP}
+            />
+            <div
+              className={`${styles.resizer} ${styles.right}`}
+              data-resizer={RESIZE_DIRECTION.RIGHT}
+              data-active={resizeDirection.current === RESIZE_DIRECTION.RIGHT}
+            />
+            <div
+              className={`${styles.resizer} ${styles.bottom}`}
+              data-resizer={RESIZE_DIRECTION.BOTTOM}
+              data-active={resizeDirection.current === RESIZE_DIRECTION.BOTTOM}
+            />
+          </>
+        )}
       </div>
     </div>
   );
@@ -710,13 +1009,23 @@ WidgetCell.propTypes = {
   widget: PropTypes.shape({
     Id: PropTypes.string,
     Name: PropTypes.string,
+    Type: PropTypes.string,
     LayoutConfig: PropTypes.shape({
       col: PropTypes.number,
       row: PropTypes.number,
       rowSpan: PropTypes.number,
       colSpan: PropTypes.number
     })
-  })
+  }),
+  selected: PropTypes.bool,
+  onSelect: PropTypes.func,
+  onResize: PropTypes.func,
+  onDelete: PropTypes.func,
+  cellWidth: PropTypes.number,
+  cellHeight: PropTypes.number,
+  colCount: PropTypes.number,
+  rowCount: PropTypes.number,
+  marginType: PropTypes.string
 };
 
 function DragWidget({ widget }) {
@@ -739,6 +1048,7 @@ DragWidget.propTypes = {
   widget: PropTypes.shape({
     Id: PropTypes.string,
     Name: PropTypes.string,
+    Type: PropTypes.string,
     LayoutConfig: PropTypes.shape({
       col: PropTypes.number,
       row: PropTypes.number,

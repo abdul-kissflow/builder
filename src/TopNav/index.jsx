@@ -1,4 +1,6 @@
 import { useState, useLayoutEffect } from "react";
+import PropTypes from "prop-types";
+
 import darkLogo from "../assets/dark.svg";
 import lightLogo from "../assets/light.svg";
 import ltrLogo from "../assets/direction-ltr.svg";
@@ -6,7 +8,7 @@ import rtlLogo from "../assets/direction-rtl.svg";
 
 import styles from "./topnav.module.css";
 
-export function TopNav() {
+export function TopNav({ themeSwitch = false, rtlSwitch = false }) {
   const [themeChecked, setThemeChecked] = useState(
     localStorage.getItem("theme") === "dark" ? true : false
   );
@@ -53,23 +55,34 @@ export function TopNav() {
 
   return (
     <header className={styles.topnavContainer}>
-      <h4 className={styles.title}>Page Builder</h4>
-      <div className={styles.rightContainer}>
-        <span className={styles.cursor} onClick={toggleThemeChange}>
-          {themeChecked ? (
-            <img src={darkLogo} className={styles.img} alt="logo dark" />
-          ) : (
-            <img src={lightLogo} className={styles.img} alt="logo light" />
+      <h4 className={styles.title}>Page Builder V2</h4>
+      {(themeSwitch || rtlSwitch) && (
+        <div className={styles.rightContainer}>
+          {themeSwitch && (
+            <span className={styles.cursor} onClick={toggleThemeChange}>
+              {themeChecked ? (
+                <img src={darkLogo} className={styles.img} alt="logo dark" />
+              ) : (
+                <img src={lightLogo} className={styles.img} alt="logo light" />
+              )}
+            </span>
           )}
-        </span>
-        <span className={styles.cursor} onClick={toggleRTLChange}>
-          {rtlChecked ? (
-            <img src={rtlLogo} className={styles.img} alt="logo rtl" />
-          ) : (
-            <img src={ltrLogo} className={styles.img} alt="logo ltr" />
+          {rtlSwitch && (
+            <span className={styles.cursor} onClick={toggleRTLChange}>
+              {rtlChecked ? (
+                <img src={rtlLogo} className={styles.img} alt="logo rtl" />
+              ) : (
+                <img src={ltrLogo} className={styles.img} alt="logo ltr" />
+              )}
+            </span>
           )}
-        </span>
-      </div>
+        </div>
+      )}
     </header>
   );
 }
+
+TopNav.propTypes = {
+  themeSwitch: PropTypes.bool,
+  rtlSwitch: PropTypes.bool
+};

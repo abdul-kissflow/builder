@@ -38,9 +38,6 @@
 .container {
   flex: 1;
   display: grid;
-  padding-inline: 12px;
-  padding-block: 20px;
-  /* gap: 8px; */
   grid-auto-rows: var(--row-height);
   grid-template-columns: repeat(var(--col-count, 12), 1fr);
   min-width: 0;
@@ -73,26 +70,51 @@
 }
 
 .widgetCell {
-  border: 1px solid lightblue;
-  background-color: lightcyan;
-  border-radius: 4px;
   min-height: var(--row-height);
-  overflow: hidden;
   cursor: grab;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.overlayContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.widgetCell:not(.selected) .overlayContainer {
+  border: 1px solid #1e89ef;
+  border-radius: 4px;
+}
+
+.widgetCell:not(.selected):hover .overlayContainer {
+  border: 2px solid #1e89ef;
 }
 
 .widgetCell .content {
+  border: 1px solid lightblue;
+  background-color: lightcyan;
+  border-radius: 4px;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  /* overflow: hidden; */
   display: grid;
   place-items: center;
+}
+
+.widgetCell.defaultMargin .content {
+  width: calc(100% - 2 * 8px);
+  height: calc(100% - 2 * 4px);
+  margin: 4px 8px;
 }
 
 .widgetCell .content label {
   font-size: 8px;
   white-space: nowrap;
   text-overflow: ellipsis;
+  user-select: none;
 }
 
 .control {
@@ -121,4 +143,115 @@
 
 .inputNumber {
   flex: 1;
+}
+
+.resizer {
+  position: absolute;
+}
+
+.resizer.left {
+  left: -5px;
+  top: 0;
+  height: 100%;
+  width: 9px;
+  cursor: ew-resize;
+}
+
+.resizer.top {
+  left: 0;
+  top: -5px;
+  height: 9px;
+  width: 100%;
+  cursor: ns-resize;
+}
+
+.resizer.right {
+  right: -5px;
+  top: 0;
+  height: 100%;
+  width: 9px;
+  cursor: ew-resize;
+}
+
+.resizer.bottom {
+  left: 0;
+  bottom: -5px;
+  height: 9px;
+  width: 100%;
+  cursor: ns-resize;
+}
+
+.resizer::before {
+  content: "";
+  position: absolute;
+  background-color: #1e89ef;
+}
+
+.resizer.left::before {
+  height: calc(100% + 2px);
+  width: 1px;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+}
+
+.resizer.top::before {
+  height: 1px;
+  width: calc(100% + 2px);
+  bottom: 50%;
+  left: 50%;
+  translate: -50% 50%;
+}
+
+.resizer.right::before {
+  height: calc(100% + 2px);
+  width: 1px;
+  right: 50%;
+  top: 50%;
+  translate: 50% -50%;
+}
+
+.resizer.bottom::before {
+  height: 1px;
+  width: calc(100% + 2px);
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+
+.resizer::after {
+  background: white;
+  position: absolute;
+  content: "";
+  border-radius: 8px;
+  border: 1px solid #1e89ef;
+}
+
+.resizer:hover::after,
+.resizer[data-active="true"]::after {
+  background: #1e89ef;
+}
+
+.resizer.left::after,
+.resizer.right::after {
+  width: 4px;
+  height: 16px;
+  top: calc(50% - 8px);
+  left: calc(50% - 3px);
+}
+
+.resizer.top::after,
+.resizer.bottom::after {
+  width: 16px;
+  height: 4px;
+  top: calc(50% - 3px);
+  left: calc(50% - 8px);
+}
+
+.overlayContainer.resizing {
+  background-color: #9ac1eb;
+}
+
+.overlayContainer.resizing .resizer:not([data-active="true"])::after {
+  display: none;
 }
