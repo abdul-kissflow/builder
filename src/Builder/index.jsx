@@ -210,14 +210,18 @@ export function Builder() {
   }
 
   function handleDragStart(e) {
+    console.log(e, " ******** handleDragStart ********");
     let widget = e.active.data.current.widget;
     const dragWidget = document.querySelector(`[id=${widget.Id}]`);
     const containerLeft = containerRef.current.offsetLeft;
     const containerTop = containerRef.current.offsetTop;
-    console.dir(dragWidget);
+    // console.dir(dragWidget);
+
+    // need to understand this
     widgetPosRef.current.x = containerLeft - dragWidget.offsetLeft;
     widgetPosRef.current.y = containerTop - dragWidget.offsetTop;
-    console.log("start", widgetPosRef.current, e, e.active.rect.current);
+
+    // console.log("start", widgetPosRef.current, e, e.active.rect.current);
     setIsDragging(true);
     setActiveWidget(widget);
     let newLayoutModel = { ...layoutModel };
@@ -237,15 +241,12 @@ export function Builder() {
   }
 
   function handleDragMove(e) {
-    const { x: activeWidgetX, y: activeWidgetY } = widgetPosRef.current;
-
     const relative = {
-      x: e.delta.x - activeWidgetX,
-      y: e.delta.y - activeWidgetY
+      x: e.delta.x,
+      y: e.delta.y
     };
     mousePosRef.current.x = relative.x;
     mousePosRef.current.y = relative.y;
-    console.log("handleDragMove", e, mousePosRef.current);
 
     if (e.over?.data.current.type === "AddCell") {
       let containerWidth = containerRef.current.clientWidth;
@@ -258,7 +259,7 @@ export function Builder() {
 
       let col = Math.floor(mousePosRef.current.x / cellWidth);
       let row = Math.floor(mousePosRef.current.y / cellHeight);
-
+      console.log("handleDragMove", e, mousePosRef.current);
       if (mousePosRef.current.x < 0) {
         col = 0;
       }
@@ -290,14 +291,14 @@ export function Builder() {
   }
 
   function handleDragOver(e) {
-    console.log("over", e);
+    // // console.log("over", e);
     if (!e.over) {
       return;
     }
   }
 
   function handleDragEnd(e) {
-    console.log("end", e);
+    // // console.log("end", e);
     const { over, active } = e;
     if (over && over?.data.current.type === "AddCell") {
       let type = active?.data.current.type;
@@ -319,11 +320,11 @@ export function Builder() {
         }
       };
       let newLayoutModel = setWidget(layoutModel, widget);
-      console.log("DragEnd - layoutModel", newLayoutModel);
+      // // console.log("DragEnd - layoutModel", newLayoutModel);
       setLayoutModel(newLayoutModel);
       setSelectedWidget(widget.Id);
       if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - (row + rowSpan) < 10) {
-        console.log("adding rows");
+        // // console.log("adding rows");
         setConfigState((prevState) => ({
           ...prevState,
           ROW_COUNT: ROW_COUNT + 20
@@ -336,7 +337,7 @@ export function Builder() {
   }
 
   function handleDragCancel(e) {
-    console.log("cancel", e);
+    // // console.log("cancel", e);
     setIsDragging(false);
     setActiveWidget({});
     setHoverDetail({});
@@ -350,7 +351,7 @@ export function Builder() {
     [layoutModel]
   );
 
-  console.log("hover", hoverDetail, selectedWidget, config);
+  // // console.log("hover", hoverDetail, selectedWidget, config);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -404,7 +405,7 @@ export function Builder() {
                     : ""
               }}
               onMouseDown={() => {
-                console.log("selected none");
+                // // console.log("selected none");
                 setSelectedWidget("");
               }}
             >
@@ -652,7 +653,7 @@ function HoverCell({
         height: `${rowSpan * cellHeight}px`
       };
     },
-    [row, col, colSpan, cellWidth, rowSpan, cellHeight]
+    [row, cellHeight, col, cellWidth, colSpan, rowSpan]
   );
 
   if (isNaN(col) || isNaN(row)) {
@@ -812,11 +813,11 @@ function WidgetCell({
           null;
       }
       resizeDirection.current = e.target.dataset.resizer;
-      console.log(
-        "mouse down",
-        resizeDirection.current,
-        resizeStarting.current
-      );
+      // console.log(
+      //   "mouse down",
+      //   resizeDirection.current,
+      //   resizeStarting.current
+      // );
       setIsResizing(true);
     }
   }, []);
@@ -851,15 +852,15 @@ function WidgetCell({
                 col: col,
                 colSpan: colSpan
               }));
-              console.log(
-                "move left",
-                diff,
-                noOfCol,
-                isLeft,
-                col,
-                colSpan,
-                minColSpan
-              );
+              // console.log(
+              //   "move left",
+              //   diff,
+              //   noOfCol,
+              //   isLeft,
+              //   col,
+              //   colSpan,
+              //   minColSpan
+              // );
             }
             break;
           case RESIZE_DIRECTION.TOP:
@@ -884,7 +885,7 @@ function WidgetCell({
                 row,
                 rowSpan
               }));
-              console.log("move left", diff, noOfRow, isTop);
+              // console.log("move left", diff, noOfRow, isTop);
             }
             break;
           case RESIZE_DIRECTION.RIGHT:
@@ -908,7 +909,7 @@ function WidgetCell({
                 ...prevState,
                 colSpan
               }));
-              console.log("move right", diff, noOfCol, isRight);
+              // console.log("move right", diff, noOfCol, isRight);
             }
             break;
           case RESIZE_DIRECTION.BOTTOM:
@@ -931,7 +932,7 @@ function WidgetCell({
                 ...prevState,
                 rowSpan
               }));
-              console.log("move bottom", diff, noOfRow, isBottom);
+              // console.log("move bottom", diff, noOfRow, isBottom);
             }
             break;
           default:
@@ -976,7 +977,7 @@ function WidgetCell({
     [onWindowMouseMove, onWindowMouseUp]
   );
 
-  console.log("pos", widgetLayoutConfig);
+  // console.log("pos", widgetLayoutConfig);
 
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
@@ -1006,7 +1007,7 @@ function WidgetCell({
         onSelect(widget.Id);
       }}
       onKeyDown={(e) => {
-        console.log("delete", e);
+        // console.log("delete", e);
         if (e.key === "Backspace") {
           onDelete(widget.Id);
         }
