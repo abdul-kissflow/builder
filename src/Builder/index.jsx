@@ -213,13 +213,17 @@ export function Builder() {
     console.log(e, " ******** handleDragStart ********");
     let widget = e.active.data.current.widget;
     const dragWidget = document.querySelector(`[id=${widget.Id}]`);
-    const containerLeft = containerRef.current.offsetLeft;
-    const containerTop = containerRef.current.offsetTop;
+
     // console.dir(dragWidget);
 
+    const { left: containerLeftOffset, top: containerTopOffset } =
+      containerRef.current.getBoundingClientRect();
+    const { left: dragWidgetLeftOffset, top: dragWidgetTopOffset } =
+      dragWidget.getBoundingClientRect();
+
     // need to understand this
-    widgetPosRef.current.x = containerLeft - dragWidget.offsetLeft;
-    widgetPosRef.current.y = containerTop - dragWidget.offsetTop;
+    widgetPosRef.current.x = containerLeftOffset - dragWidgetLeftOffset;
+    widgetPosRef.current.y = containerTopOffset - dragWidgetTopOffset;
 
     // console.log("start", widgetPosRef.current, e, e.active.rect.current);
     setIsDragging(true);
