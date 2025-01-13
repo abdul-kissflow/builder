@@ -241,9 +241,10 @@ export function Builder() {
   }
 
   function handleDragMove(e) {
+    const { x: activeWidgetX, y: activeWidgetY } = widgetPosRef.current;
     const relative = {
-      x: e.delta.x,
-      y: e.delta.y
+      x: e.delta.x - activeWidgetX,
+      y: e.delta.y - activeWidgetY
     };
     mousePosRef.current.x = relative.x;
     mousePosRef.current.y = relative.y;
@@ -382,10 +383,11 @@ export function Builder() {
           <LeftNav />
           <div
             style={{
+              position: "relative",
               height: "100%",
-              width: "100%",
-              paddingBlock: "20px",
-              paddingInline: "12px"
+              width: "100%"
+              // paddingBlock: "20px",
+              // paddingInline: "12px"
             }}
           >
             <div
@@ -394,7 +396,7 @@ export function Builder() {
                 isDragging ? styles.isDragging : ""
               }`}
               style={{
-                position: "relative",
+                position: "absolute",
                 height: "100%",
                 width: "100%",
                 "--col-count": COLUMN_COUNT,
