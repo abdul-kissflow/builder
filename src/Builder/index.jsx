@@ -29,6 +29,7 @@ const INITIAL_CONFIG = {
   ROW_COUNT: 100,
   ROW_HEIGHT: 8,
   ROW_HEIGHT_UNIT: "px",
+  //to-do: margin type ?
   MARGIN_TYPE: "default"
 };
 
@@ -358,6 +359,13 @@ export function Builder() {
   });
   const sensors = useSensors(mouseSensor);
 
+  const cellHeight =
+    ROW_HEIGHT_UNIT === "px"
+      ? ROW_HEIGHT
+      : containerRef.current?.clientHeight / ROW_COUNT;
+
+  const cellWidth = containerRef.current?.clientWidth / COLUMN_COUNT;
+
   return (
     <div className={styles.mainLayout}>
       <DndContext
@@ -385,6 +393,7 @@ export function Builder() {
                 isDragging ? styles.isDragging : ""
               }`}
               style={{
+                position: "relative",
                 height: "100%",
                 width: "100%",
                 "--col-count": COLUMN_COUNT,
@@ -412,19 +421,19 @@ export function Builder() {
                 widgets={layoutWidgets}
                 selectedWidget={selectedWidget}
                 onSelectWidget={setSelectedWidget}
-                cellWidth={containerRef.current?.clientWidth / COLUMN_COUNT}
-                cellHeight={
-                  ROW_HEIGHT_UNIT === "px"
-                    ? ROW_HEIGHT
-                    : containerRef.current?.clientHeight / ROW_COUNT
-                }
+                cellWidth={cellWidth}
+                cellHeight={cellHeight}
                 colCount={COLUMN_COUNT}
                 rowCount={ROW_COUNT}
                 marginType={MARGIN_TYPE}
                 onResizeWidget={onResizeWidget}
                 onDeleteWidget={onDeleteWidget}
               />
-              <HoverCell {...hoverDetail} />
+              <HoverCell
+                cellHeight={cellHeight}
+                cellWidth={cellWidth}
+                {...hoverDetail}
+              />
             </div>
           </div>
         </div>
@@ -626,15 +635,37 @@ DroppableAreaComponent.propTypes = {
   rowHeight: PropTypes.number
 };
 
-function HoverCell({ col, row, rowSpan = 1, colSpan = 1 }) {
+function HoverCell({
+  col,
+  row,
+  rowSpan = 1,
+  colSpan = 1,
+  cellHeight,
+  cellWidth
+}) {
+  const widgetAlignmentProperties = useMemo(
+    function getWidgetAlignemntProperties() {
+      return {
+        top: `${row * cellHeight}px`,
+        left: `${col * cellWidth}px`,
+        width: `${colSpan * cellWidth}px`,
+        height: `${rowSpan * cellHeight}px`
+      };
+    },
+    [row, col, colSpan, cellWidth, rowSpan, cellHeight]
+  );
+
   if (isNaN(col) || isNaN(row)) {
     return null;
   }
+
   return (
     <span
       className={styles.hoverCell}
       style={{
-        gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
+        position: "absolute",
+        ...widgetAlignmentProperties
+        // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       id="hoverCell"
     />
@@ -645,7 +676,9 @@ HoverCell.propTypes = {
   col: PropTypes.number,
   row: PropTypes.number,
   rowSpan: PropTypes.number,
-  colSpan: PropTypes.number
+  colSpan: PropTypes.number,
+  cellHeight: PropTypes.number,
+  cellWidth: PropTypes.number
 };
 
 function LeftNav() {
@@ -906,6 +939,7 @@ function WidgetCell({
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       cellHeight,
       cellWidth,
@@ -944,13 +978,27 @@ function WidgetCell({
 
   console.log("pos", widgetLayoutConfig);
 
+  const widgetAlignmentProperties = useMemo(
+    function getWidgetAlignemntProperties() {
+      return {
+        top: `${row * cellHeight}px`,
+        left: `${col * cellWidth}px`,
+        width: `${colSpan * cellWidth}px`,
+        height: `${rowSpan * cellHeight}px`
+      };
+    },
+    [row, col, colSpan, cellWidth, rowSpan, cellHeight]
+  );
+
   return (
     <div
       className={`${styles.widgetCell} ${selected ? styles.selected : ""} ${
         marginType === "default" ? styles.defaultMargin : ""
       }`}
       style={{
-        gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
+        position: "absolute",
+        ...widgetAlignmentProperties
+        // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       ref={setNodeRef}
       onClick={(e) => {
