@@ -268,6 +268,27 @@ function WidgetCell({
   );
 
   const [value, setValue] = useState("100px");
+  const resizeObserverRef = useRef(null);
+
+  const [widgetWidth, setWidgetWidth] = useState(0);
+  const [widgetHeight, setWidgetHeight] = useState(0);
+
+  useEffect(function resizeObserver() {
+    if (resizeObserverRef.current) {
+      const observer = new ResizeObserver((entries) => {
+        let _height = entries[0].target.clientHeight;
+        let _width = entries[0].target.clientWidth;
+        setWidgetWidth(_height);
+        setWidgetHeight(_width);
+      });
+      observer.observe(resizeObserverRef.current);
+
+      // Cleanup function
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, []);
 
   return (
     <div
@@ -297,6 +318,7 @@ function WidgetCell({
       {...listeners}
       {...attributes}
     >
+      {`${widgetWidth} x ${widgetHeight}`}
       <div className={styles.content}>
         <label>{widget.Id}</label>
 
@@ -317,6 +339,7 @@ function WidgetCell({
         className={`${styles.overlayContainer} ${
           isResizing ? styles.resizing : ""
         }`}
+        ref={resizeObserverRef}
         onMouseDown={onMouseDown}
       >
         {selected && (
