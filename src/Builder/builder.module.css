@@ -74,6 +74,9 @@
   cursor: grab;
   position: relative;
   transition: all 0.3s;
+
+  /* auto grow poc */
+  height: auto;
 }
 
 .overlayContainer {
@@ -106,7 +109,12 @@
 
 .widgetCell.defaultMargin .content {
   width: calc(100% - 2 * 8px);
-  height: calc(100% - 2 * 4px);
+
+  /* auto grow poc */
+  /* height: calc(100% - 2 * 4px); */
+  height: auto;
+  padding: 12px;
+
   margin: 4px 8px;
 }
 
@@ -254,4 +262,20 @@
 
 .overlayContainer.resizing .resizer:not([data-active="true"])::after {
   display: none;
+}
+
+.growableChildrenWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.growableChildrenWrapper > input {
+  width: 100%;
+  flex: 0 0 100%;
+}
+
+.growableChildren {
+  border: 1px solid brown;
+  background-color: pink;
 }

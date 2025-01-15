@@ -20,6 +20,7 @@ import { DroppableArea } from "./dropable.area";
 import { LayoutWidgets } from "./widget.renderer";
 import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
+import { InputNumber, Select } from "antd";
 
 export function Builder() {
   const [configState, setConfigState] = useState(INITIAL_CONFIG);
@@ -28,6 +29,8 @@ export function Builder() {
   const [selectedWidget, setSelectedWidget] = useState(
     INITIAL_LAYOUT_WIDGETS_META.root.Widgets[0]
   );
+
+  const [cardChildHeight, setCardChildHeight] = useState(50);
 
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDetail, setHoverDetail] = useState({});
@@ -305,6 +308,7 @@ export function Builder() {
                 }
               />
               <LayoutWidgets
+                cardChildHeight={cardChildHeight}
                 widgets={layoutWidgets}
                 selectedWidget={selectedWidget}
                 onSelectWidget={setSelectedWidget}
@@ -336,7 +340,25 @@ export function Builder() {
       </DndContext>
       <aside>
         <Config config={configState} setConfig={setConfigState} />
+        <GeneralConfig
+          height={cardChildHeight}
+          setHeight={setCardChildHeight}
+        />
       </aside>
+    </div>
+  );
+}
+
+function GeneralConfig({ height, setHeight }) {
+  return (
+    <div>
+      <div>Card chidren height</div>
+      <InputNumber value={height} onChange={(value) => setHeight(value)} />
+      <Select value={"px"} size="small">
+        <Select.Option key={"px"} value={"px"}>
+          px
+        </Select.Option>
+      </Select>
     </div>
   );
 }

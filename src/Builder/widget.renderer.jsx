@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useDraggable } from "@dnd-kit/core";
 
 import styles from "./builder.module.css";
-import { RESIZE_DIRECTION, WIDGETS_CONFIG } from "./constant";
+import { RESIZE_DIRECTION, WIDGETS_CONFIG, WIDGETS_TYPE } from "./constant";
 
 export function LayoutWidgets({
   widgets,
@@ -15,11 +15,13 @@ export function LayoutWidgets({
   onDeleteWidget,
   colCount,
   rowCount,
-  marginType
+  marginType,
+  cardChildHeight
 }) {
   return widgets.map((widget) => {
     return (
       <WidgetCell
+        cardChildHeight={cardChildHeight}
         key={widget.Id}
         widget={widget}
         cellWidth={cellWidth}
@@ -46,7 +48,8 @@ function WidgetCell({
   cellHeight,
   colCount,
   rowCount,
-  marginType
+  marginType,
+  cardChildHeight
 }) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: widget.Id,
@@ -264,6 +267,8 @@ function WidgetCell({
     [row, col, colSpan, cellWidth, rowSpan, cellHeight]
   );
 
+  const [value, setValue] = useState("100px");
+
   return (
     <div
       className={`${styles.widgetCell} ${selected ? styles.selected : ""} ${
@@ -271,7 +276,10 @@ function WidgetCell({
       }`}
       style={{
         position: "absolute",
-        ...widgetAlignmentProperties
+        ...widgetAlignmentProperties,
+
+        /* auto grow poc */
+        height: "auto"
         // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       ref={setNodeRef}
@@ -291,6 +299,19 @@ function WidgetCell({
     >
       <div className={styles.content}>
         <label>{widget.Id}</label>
+
+        {/* /* auto grow poc */}
+        {widget.Type === WIDGETS_TYPE.CARD && (
+          <div className={styles.growableChildrenWrapper}>
+            <input value={value} onChange={(e) => setValue(e.target.value)} />
+            <div
+              style={{ height: cardChildHeight }}
+              className={styles.growableChildren}
+            />
+          </div>
+        )}
+
+        {/* /* auto grow poc */}
       </div>
       <div
         className={`${styles.overlayContainer} ${
