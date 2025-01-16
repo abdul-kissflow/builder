@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 
 import styles from "./builder.module.css";
 import { RESIZE_DIRECTION, WIDGETS_TYPE } from "./constant";
+import { getSpanCount } from "./util";
 
 export function LayoutWidgets({
   widgets,
@@ -257,8 +258,9 @@ function WidgetCell({
 
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
-      let totalColumnOccupied = rowEnd - rowStart;
-      let totalRowOccupied = colEnd - colStart;
+      let totalColumnOccupied = getSpanCount(colStart, colEnd);
+      let totalRowOccupied = getSpanCount(rowStart, rowEnd);
+
       return {
         top: `${colStart * cellHeight}px`,
         left: `${rowStart * cellWidth}px`,
@@ -269,28 +271,28 @@ function WidgetCell({
     [cellHeight, cellWidth, colEnd, colStart, rowEnd, rowStart]
   );
 
-  const [value, setValue] = useState("100px");
+  // const [value, setValue] = useState("100px");
   const resizeObserverRef = useRef(null);
 
-  const [widgetWidth, setWidgetWidth] = useState(0);
-  const [widgetHeight, setWidgetHeight] = useState(0);
+  // const [widgetWidth, setWidgetWidth] = useState(0);
+  // const [widgetHeight, setWidgetHeight] = useState(0);
 
-  useEffect(function resizeObserver() {
-    if (resizeObserverRef.current) {
-      const observer = new ResizeObserver((entries) => {
-        let _height = entries[0].target.clientHeight;
-        let _width = entries[0].target.clientWidth;
-        setWidgetWidth(_height);
-        setWidgetHeight(_width);
-      });
-      observer.observe(resizeObserverRef.current);
+  // useEffect(function resizeObserver() {
+  //   if (resizeObserverRef.current) {
+  //     const observer = new ResizeObserver((entries) => {
+  //       let _height = entries[0].target.clientHeight;
+  //       let _width = entries[0].target.clientWidth;
+  //       setWidgetWidth(_height);
+  //       setWidgetHeight(_width);
+  //     });
+  //     observer.observe(resizeObserverRef.current);
 
-      // Cleanup function
-      return () => {
-        observer.disconnect();
-      };
-    }
-  }, []);
+  //     // Cleanup function
+  //     return () => {
+  //       observer.disconnect();
+  //     };
+  //   }
+  // }, []);
 
   return (
     <div
@@ -299,10 +301,10 @@ function WidgetCell({
       }`}
       style={{
         position: "absolute",
-        ...widgetAlignmentProperties,
+        ...widgetAlignmentProperties
 
         /* auto grow poc */
-        height: "auto"
+        // height: "auto"
         // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       ref={setNodeRef}
@@ -320,12 +322,12 @@ function WidgetCell({
       {...listeners}
       {...attributes}
     >
-      {`${widgetWidth} x ${widgetHeight}`}
+      {/* {`${widgetWidth} x ${widgetHeight}`} */}
       <div className={styles.content}>
         <label>{widget.Id}</label>
 
         {/* /* auto grow poc */}
-        {widget.Type === WIDGETS_TYPE.CARD && (
+        {/* {widget.Type === WIDGETS_TYPE.CARD && (
           <div className={styles.growableChildrenWrapper}>
             <input value={value} onChange={(e) => setValue(e.target.value)} />
             <div
@@ -333,7 +335,7 @@ function WidgetCell({
               className={styles.growableChildren}
             />
           </div>
-        )}
+        )} */}
 
         {/* /* auto grow poc */}
       </div>

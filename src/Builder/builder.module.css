@@ -111,8 +111,8 @@
   width: calc(100% - 2 * 8px);
 
   /* auto grow poc */
-  /* height: calc(100% - 2 * 4px); */
-  height: auto;
+  height: calc(100% - 2 * 4px);
+  /* height: auto; */
   padding: 12px;
 
   margin: 4px 8px;

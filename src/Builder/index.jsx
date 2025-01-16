@@ -112,17 +112,23 @@ export function Builder() {
     // console.log("start", widgetPosRef.current, e, e.active.rect.current);
     setIsDragging(true);
     setActiveWidget(widget);
+
     let newLayoutModel = { ...layoutModel };
     let type = e.active?.data.current.type;
     if (type === "DragWidgetCell") {
       newLayoutModel = deleteWidget(newLayoutModel, widget.Id);
       setLayoutModel(newLayoutModel);
-      let { colEnd, colStart, rowEnd, rowStart } = widget?.LayoutConfig || {};
+      // let { colEnd, colStart, rowEnd, rowStart, colSpan, rowSpan } =
+      //   widget?.LayoutConfig || {};
+      let config = widget?.LayoutConfig || {};
+
       setHoverDetail({
-        colEnd,
-        colStart,
-        rowEnd,
-        rowStart
+        colStart: config.colStart,
+        colEnd: config.colEnd,
+        rowEnd: config.rowEnd,
+        rowStart: config.rowStart,
+        colSpan: config.colSpan(),
+        rowSpan: config.rowSpan()
       });
     }
     originLayoutModel.current = newLayoutModel;
@@ -141,14 +147,18 @@ export function Builder() {
       let containerWidth = containerRef.current.clientWidth;
       let containerHeight = containerRef.current.clientHeight;
 
-      let { colEnd = 1, rowEnd = 1 } = activeWidget?.LayoutConfig || {};
+      let activeWidgetConfig = activeWidget?.LayoutConfig || {};
+
       let cellWidth = containerWidth / COLUMN_COUNT;
       let cellHeight =
         ROW_HEIGHT_UNIT === "px" ? ROW_HEIGHT : containerHeight / ROW_COUNT;
 
       let colStart = Math.floor(mousePosRef.current.y / cellHeight);
       let rowStart = Math.floor(mousePosRef.current.x / cellWidth);
-      console.log("handleDragMove", e, mousePosRef.current);
+
+      let colEnd = colStart + activeWidgetConfig.colSpan();
+      let rowEnd = rowStart + activeWidgetConfig.rowSpan();
+
       if (mousePosRef.current.x < 0) {
         colStart = 0;
       }
@@ -162,22 +172,21 @@ export function Builder() {
         rowStart = ROW_COUNT - 1;
       }
 
-      let rowSpan = getSpanCount(rowStart, rowEnd);
-      let colSpan = getSpanCount(colStart, colEnd);
-
       if (rowEnd >= ROW_COUNT) {
-        rowStart = ROW_COUNT - rowSpan;
+        rowStart = ROW_COUNT - activeWidgetConfig.rowSpan();
       }
 
       if (colEnd >= COLUMN_COUNT) {
-        colStart = COLUMN_COUNT - colSpan;
+        colStart = COLUMN_COUNT - activeWidgetConfig.colSpan();
       }
 
       setHoverDetail({
         rowStart,
         colStart,
-        rowSpan,
-        colSpan
+        rowEnd,
+        colEnd,
+        colSpan: activeWidgetConfig.colSpan(),
+        rowSpan: activeWidgetConfig.rowSpan()
       });
     }
   }
@@ -196,8 +205,7 @@ export function Builder() {
       let type = active?.data.current.type;
       let currentWidget = type ? active.data.current.widget : activeWidget;
 
-      let { rowEnd: widgetRowEnd, colEnd: WidgetColEnd } =
-        activeWidget?.LayoutConfig || {};
+      let activeWidgetConfig = activeWidget?.LayoutConfig || {};
 
       let { rowStart, rowEnd, colStart, colEnd } = hoverDetail;
 
@@ -212,10 +220,12 @@ export function Builder() {
           // colSpan: widgetColSpan || colSpan,
           // rowSpan: widgetRowSpan || rowSpan,
           // row: row
+
+          ...activeWidgetConfig,
           rowStart: rowStart,
-          rowEnd: widgetRowEnd || rowEnd,
+          rowEnd: rowEnd,
           colStart: colStart,
-          colEnd: WidgetColEnd || colEnd
+          colEnd: colEnd
         }
       };
       let newLayoutModel = setWidget(layoutModel, widget);
