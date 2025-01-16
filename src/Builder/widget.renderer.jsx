@@ -105,7 +105,8 @@ function WidgetCell({
   const onWindowMouseMove = useCallback(
     function onWindowMouseMoveFunction(e) {
       if (isResizing) {
-        let { colStart, rowStart, colSpan, rowSpan } = widget.LayoutConfig;
+        let { colStart, colEnd, rowStart, rowEnd, colSpan, rowSpan } =
+          widget.LayoutConfig;
         // let { minColSpan, minRowSpan } = WIDGETS_CONFIG[widget.Type];
 
         switch (resizeDirection.current) {
@@ -191,7 +192,7 @@ function WidgetCell({
                 // colSpan = colSpan - noOfCol;
               }
 
-              if (colEnd < colCount || colEnd < colStart) {
+              if (colEnd > colCount || colEnd < colStart) {
                 return;
               }
 
@@ -216,7 +217,7 @@ function WidgetCell({
                 widgetRowEnd = rowEnd - noOfRow;
               }
 
-              if (rowEnd < rowCount || rowEnd > rowStart) {
+              if (rowEnd > rowCount || rowEnd < rowStart) {
                 return;
               }
 
@@ -232,16 +233,7 @@ function WidgetCell({
         }
       }
     },
-    [
-      cellHeight,
-      cellWidth,
-      colCount,
-      colEnd,
-      isResizing,
-      rowCount,
-      rowEnd,
-      widget.LayoutConfig
-    ]
+    [cellHeight, cellWidth, colCount, isResizing, rowCount, widget.LayoutConfig]
   );
 
   const onWindowMouseUp = useCallback(
