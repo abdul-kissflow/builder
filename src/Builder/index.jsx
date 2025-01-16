@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useDeferredValue } from "react";
+import { useMemo, useRef, useState, useDeferredValue, useEffect } from "react";
 
 import {
   DndContext,
@@ -21,6 +21,7 @@ import { LayoutWidgets } from "./widget.renderer";
 import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
 import { InputNumber, Select } from "antd";
+import { getSpanCount } from "./util";
 
 export function Builder() {
   const [configState, setConfigState] = useState(INITIAL_CONFIG);
@@ -116,12 +117,12 @@ export function Builder() {
     if (type === "DragWidgetCell") {
       newLayoutModel = deleteWidget(newLayoutModel, widget.Id);
       setLayoutModel(newLayoutModel);
-      let { row, col, rowSpan = 1, colSpan = 1 } = widget?.LayoutConfig || {};
+      let { colEnd, colStart, rowEnd, rowStart } = widget?.LayoutConfig || {};
       setHoverDetail({
-        row,
-        col,
-        rowSpan,
-        colSpan
+        colEnd,
+        colStart,
+        rowEnd,
+        rowStart
       });
     }
     originLayoutModel.current = newLayoutModel;
@@ -140,38 +141,41 @@ export function Builder() {
       let containerWidth = containerRef.current.clientWidth;
       let containerHeight = containerRef.current.clientHeight;
 
-      let { rowSpan = 1, colSpan = 1 } = activeWidget?.LayoutConfig || {};
+      let { colEnd = 1, rowEnd = 1 } = activeWidget?.LayoutConfig || {};
       let cellWidth = containerWidth / COLUMN_COUNT;
       let cellHeight =
         ROW_HEIGHT_UNIT === "px" ? ROW_HEIGHT : containerHeight / ROW_COUNT;
 
-      let col = Math.floor(mousePosRef.current.x / cellWidth);
-      let row = Math.floor(mousePosRef.current.y / cellHeight);
+      let colStart = Math.floor(mousePosRef.current.y / cellHeight);
+      let rowStart = Math.floor(mousePosRef.current.x / cellWidth);
       console.log("handleDragMove", e, mousePosRef.current);
       if (mousePosRef.current.x < 0) {
-        col = 0;
+        colStart = 0;
       }
       if (mousePosRef.current.x > containerWidth) {
-        col = COLUMN_COUNT - 1;
+        colStart = COLUMN_COUNT - 1;
       }
       if (mousePosRef.current.y < 0) {
-        row = 0;
+        rowStart = 0;
       }
       if (mousePosRef.current.y > containerHeight) {
-        row = ROW_COUNT - 1;
+        rowStart = ROW_COUNT - 1;
       }
 
-      if (row + rowSpan >= ROW_COUNT) {
-        row = ROW_COUNT - rowSpan;
+      let rowSpan = getSpanCount(rowStart, rowEnd);
+      let colSpan = getSpanCount(colStart, colEnd);
+
+      if (rowEnd >= ROW_COUNT) {
+        rowStart = ROW_COUNT - rowSpan;
       }
 
-      if (col + colSpan >= COLUMN_COUNT) {
-        col = COLUMN_COUNT - colSpan;
+      if (colEnd >= COLUMN_COUNT) {
+        colStart = COLUMN_COUNT - colSpan;
       }
 
       setHoverDetail({
-        row,
-        col,
+        rowStart,
+        colStart,
         rowSpan,
         colSpan
       });
@@ -191,9 +195,12 @@ export function Builder() {
     if (over && over?.data.current.type === "AddCell") {
       let type = active?.data.current.type;
       let currentWidget = type ? active.data.current.widget : activeWidget;
-      let { colSpan: widgetColSpan, rowSpan: widgetRowSpan } =
+
+      let { rowEnd: widgetRowEnd, colEnd: WidgetColEnd } =
         activeWidget?.LayoutConfig || {};
-      let { col, row, colSpan, rowSpan } = hoverDetail;
+
+      let { rowStart, rowEnd, colStart, colEnd } = hoverDetail;
+
       let widget = {
         ...currentWidget,
         Type: currentWidget.Type,
@@ -201,17 +208,21 @@ export function Builder() {
           ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
           : currentWidget.Id,
         LayoutConfig: {
-          col,
-          colSpan: widgetColSpan || colSpan,
-          rowSpan: widgetRowSpan || rowSpan,
-          row: row
+          // col,
+          // colSpan: widgetColSpan || colSpan,
+          // rowSpan: widgetRowSpan || rowSpan,
+          // row: row
+          rowStart: rowStart,
+          rowEnd: widgetRowEnd || rowEnd,
+          colStart: colStart,
+          colEnd: WidgetColEnd || colEnd
         }
       };
       let newLayoutModel = setWidget(layoutModel, widget);
       // // console.log("DragEnd - layoutModel", newLayoutModel);
       setLayoutModel(newLayoutModel);
       setSelectedWidget(widget.Id);
-      if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - (row + rowSpan) < 10) {
+      if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - rowEnd < 10) {
         // // console.log("adding rows");
         setConfigState((prevState) => ({
           ...prevState,
@@ -255,6 +266,8 @@ export function Builder() {
 
   const cellWidth = containerRef.current?.clientWidth / COLUMN_COUNT;
 
+  useEffect(function takeRef() {}, []);
+
   return (
     <div className={styles.mainLayout}>
       <DndContext
@@ -278,6 +291,7 @@ export function Builder() {
             }}
           >
             <div
+              data-name="ref-check"
               ref={containerRef}
               className={`${styles.container} ${
                 isDragging ? styles.isDragging : ""
@@ -312,7 +326,7 @@ export function Builder() {
                 widgets={layoutWidgets}
                 selectedWidget={selectedWidget}
                 onSelectWidget={setSelectedWidget}
-                cellWidth={cellWidth}
+                cellWidth={800 / COLUMN_COUNT}
                 cellHeight={cellHeight}
                 colCount={COLUMN_COUNT}
                 rowCount={ROW_COUNT}

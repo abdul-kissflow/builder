@@ -5,26 +5,28 @@ import PropTypes from "prop-types";
 import styles from "./builder.module.css";
 
 export function HoverCell({
-  col,
-  row,
-  rowSpan = 1,
-  colSpan = 1,
+  colStart,
+  rowStart,
+  colEnd,
+  rowEnd,
   cellHeight,
   cellWidth
 }) {
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
+      let totalColumnOccupied = rowEnd - rowStart;
+      let totalRowOccupied = colEnd - colStart;
       return {
-        top: `${row * cellHeight}px`,
-        left: `${col * cellWidth}px`,
-        width: `${colSpan * cellWidth}px`,
-        height: `${rowSpan * cellHeight}px`
+        top: `${colStart * cellHeight}px`,
+        left: `${rowStart * cellWidth}px`,
+        width: `${totalColumnOccupied * cellWidth}px`,
+        height: `${totalRowOccupied * cellHeight}px`
       };
     },
-    [row, cellHeight, col, cellWidth, colSpan, rowSpan]
+    [cellHeight, cellWidth, colEnd, colStart, rowEnd, rowStart]
   );
 
-  if (isNaN(col) || isNaN(row)) {
+  if (isNaN(colStart) || isNaN(rowStart)) {
     return null;
   }
 

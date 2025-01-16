@@ -16,24 +16,51 @@ export const WIDGETS_TYPE = {
   CARD: "card"
 };
 
-export const WIDGETS_CONFIG = {
+export const WIDGET_CONFIG = {
   [WIDGETS_TYPE.INPUT]: {
-    minRowSpan: 4,
-    minColSpan: 4
+    rowStart: 0,
+    rowEnd: 4,
+    colStart: 0,
+    colEnd: 4
   },
   [WIDGETS_TYPE.DROPDOWN]: {
-    minRowSpan: 4,
-    minColSpan: 4
+    rowStart: 0,
+    rowEnd: 4,
+    colStart: 0,
+    colEnd: 4
   },
   [WIDGETS_TYPE.ICON]: {
-    minRowSpan: 3,
-    minColSpan: 2
+    rowStart: 0,
+    rowEnd: 3,
+    colStart: 0,
+    colEnd: 2
   },
   [WIDGETS_TYPE.CARD]: {
-    minRowSpan: 10,
-    minColSpan: 4
+    rowStart: 10,
+    rowEnd: 20,
+    colStart: 10,
+    colEnd: 13
   }
 };
+
+// export const WIDGETS_CONFIG = {
+//   [WIDGETS_TYPE.INPUT]: {
+//     minRowSpan: 4,
+//     minColSpan: 4
+//   },
+//   [WIDGETS_TYPE.DROPDOWN]: {
+//     minRowSpan: 4,
+//     minColSpan: 4
+//   },
+//   [WIDGETS_TYPE.ICON]: {
+//     minRowSpan: 3,
+//     minColSpan: 2
+//   },
+//   [WIDGETS_TYPE.CARD]: {
+//     minRowSpan: 10,
+//     minColSpan: 4
+//   }
+// };
 
 export const WIDGETS_LIST = [
   {
@@ -41,10 +68,13 @@ export const WIDGETS_LIST = [
     Id: "input",
     Type: WIDGETS_TYPE.INPUT,
     LayoutConfig: {
-      col: 0,
-      row: 0,
-      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minColSpan,
-      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minRowSpan
+      rowStart: WIDGET_CONFIG[WIDGETS_TYPE.INPUT].rowStart,
+      rowEnd: WIDGET_CONFIG[WIDGETS_TYPE.INPUT].rowEnd,
+      colStart: WIDGET_CONFIG[WIDGETS_TYPE.INPUT].colStart,
+      colEnd: WIDGET_CONFIG[WIDGETS_TYPE.INPUT].colEnd
+      // row: WIDGET_CONFIG[WIDGETS_TYPE.INPUT].rowStart
+      // colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minColSpan,
+      // rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minRowSpan
     }
   },
   {
@@ -52,10 +82,10 @@ export const WIDGETS_LIST = [
     Id: "dropdown",
     Type: WIDGETS_TYPE.DROPDOWN,
     LayoutConfig: {
-      col: 0,
-      row: 0,
-      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.DROPDOWN].minColSpan,
-      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.DROPDOWN].minRowSpan
+      rowStart: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].rowStart,
+      rowEnd: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].rowEnd,
+      colStart: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].colStart,
+      colEnd: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].colEnd
     }
   },
   {
@@ -63,10 +93,10 @@ export const WIDGETS_LIST = [
     Id: "icon",
     Type: WIDGETS_TYPE.ICON,
     LayoutConfig: {
-      col: 0,
-      row: 0,
-      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.ICON].minColSpan,
-      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.ICON].minRowSpan
+      rowStart: WIDGET_CONFIG[WIDGETS_TYPE.ICON].rowStart,
+      rowEnd: WIDGET_CONFIG[WIDGETS_TYPE.ICON].rowEnd,
+      colStart: WIDGET_CONFIG[WIDGETS_TYPE.ICON].colStart,
+      colEnd: WIDGET_CONFIG[WIDGETS_TYPE.ICON].colEnd
     }
   },
   {
@@ -74,10 +104,12 @@ export const WIDGETS_LIST = [
     Id: "card",
     Type: WIDGETS_TYPE.CARD,
     LayoutConfig: {
-      col: 0,
-      row: 0,
-      colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.CARD].minColSpan,
-      rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.CARD].minRowSpan
+      rowStart: WIDGET_CONFIG[WIDGETS_TYPE.CARD].rowStart,
+      rowEnd: WIDGET_CONFIG[WIDGETS_TYPE.CARD].rowEnd,
+      colStart: WIDGET_CONFIG[WIDGETS_TYPE.CARD].colStart,
+      colEnd: WIDGET_CONFIG[WIDGETS_TYPE.CARD].colEnd
+      // colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.CARD].minColSpan,
+      // rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.CARD].minRowSpan
     }
   }
 ];

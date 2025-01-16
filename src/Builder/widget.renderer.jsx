@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { useDraggable } from "@dnd-kit/core";
 
 import styles from "./builder.module.css";
-import { RESIZE_DIRECTION, WIDGETS_CONFIG, WIDGETS_TYPE } from "./constant";
+import { RESIZE_DIRECTION, WIDGETS_TYPE } from "./constant";
 
 export function LayoutWidgets({
   widgets,
@@ -67,7 +67,7 @@ function WidgetCell({
   const resizeDirection = useRef(null);
   const resizeStarting = useRef(null);
 
-  const { col, row, colSpan, rowSpan } = widgetLayoutConfig;
+  const { colEnd, colStart, rowEnd, rowStart } = widgetLayoutConfig;
 
   useEffect(() => {
     setWidgetLayoutConfig(widget.LayoutConfig);
@@ -102,7 +102,7 @@ function WidgetCell({
     function onWindowMouseMoveFunction(e) {
       if (isResizing) {
         let { col, row, colSpan, rowSpan } = widget.LayoutConfig;
-        let { minColSpan, minRowSpan } = WIDGETS_CONFIG[widget.Type];
+        // let { minColSpan, minRowSpan } = WIDGETS_CONFIG[widget.Type];
         switch (resizeDirection.current) {
           case RESIZE_DIRECTION.LEFT:
             {
@@ -119,9 +119,9 @@ function WidgetCell({
                 colSpan = colSpan - noOfCol;
               }
 
-              if (col < 0 || colSpan > colCount || colSpan < minColSpan) {
-                return;
-              }
+              // if (col < 0 || colSpan > colCount || colSpan < minColSpan) {
+              //   return;
+              // }
 
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
@@ -153,9 +153,9 @@ function WidgetCell({
                 rowSpan = rowSpan - noOfRow;
               }
 
-              if (row < 0 || rowSpan > rowCount || rowSpan < minRowSpan) {
-                return;
-              }
+              // if (row < 0 || rowSpan > rowCount || rowSpan < minRowSpan) {
+              //   return;
+              // }
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
                 row,
@@ -177,9 +177,9 @@ function WidgetCell({
                 colSpan = colSpan - noOfCol;
               }
 
-              if (colSpan > colCount || colSpan < minColSpan) {
-                return;
-              }
+              // if (colSpan > colCount || colSpan < minColSpan) {
+              //   return;
+              // }
 
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
@@ -200,9 +200,9 @@ function WidgetCell({
                 rowSpan = rowSpan - noOfRow;
               }
 
-              if (rowSpan > rowCount || rowSpan < minRowSpan) {
-                return;
-              }
+              // if (rowSpan > rowCount || rowSpan < minRowSpan) {
+              //   return;
+              // }
 
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
@@ -257,14 +257,16 @@ function WidgetCell({
 
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
+      let totalColumnOccupied = rowEnd - rowStart;
+      let totalRowOccupied = colEnd - colStart;
       return {
-        top: `${row * cellHeight}px`,
-        left: `${col * cellWidth}px`,
-        width: `${colSpan * cellWidth}px`,
-        height: `${rowSpan * cellHeight}px`
+        top: `${colStart * cellHeight}px`,
+        left: `${rowStart * cellWidth}px`,
+        width: `${totalColumnOccupied * cellWidth}px`,
+        height: `${totalRowOccupied * cellHeight}px`
       };
     },
-    [row, col, colSpan, cellWidth, rowSpan, cellHeight]
+    [cellHeight, cellWidth, colEnd, colStart, rowEnd, rowStart]
   );
 
   const [value, setValue] = useState("100px");
