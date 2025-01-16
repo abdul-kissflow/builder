@@ -336,7 +336,7 @@ export function Builder() {
                 widgets={layoutWidgets}
                 selectedWidget={selectedWidget}
                 onSelectWidget={setSelectedWidget}
-                cellWidth={800 / COLUMN_COUNT}
+                cellWidth={cellWidth}
                 cellHeight={cellHeight}
                 colCount={COLUMN_COUNT}
                 rowCount={ROW_COUNT}
