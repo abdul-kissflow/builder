@@ -9,24 +9,24 @@ export function HoverCell({
   rowStart,
   colEnd,
   rowEnd,
+  rowSpan,
+  colSpan,
   cellHeight,
   cellWidth
 }) {
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
-      let totalColumnOccupied = rowEnd - rowStart;
-      let totalRowOccupied = colEnd - colStart;
       return {
-        top: `${colStart * cellHeight}px`,
-        left: `${rowStart * cellWidth}px`,
-        width: `${totalColumnOccupied * cellWidth}px`,
-        height: `${totalRowOccupied * cellHeight}px`
+        top: `${rowStart * cellHeight}px`,
+        left: `${colStart * cellWidth}px`,
+        width: `${colSpan * cellWidth}px`,
+        height: `${rowSpan * cellHeight}px`
       };
     },
-    [cellHeight, cellWidth, colEnd, colStart, rowEnd, rowStart]
+    [cellHeight, cellWidth, colSpan, colStart, rowSpan, rowStart]
   );
 
-  if (isNaN(colStart) || isNaN(rowStart)) {
+  if (isNaN(colStart) || isNaN(rowStart) || isNaN(colSpan) || isNaN(rowSpan)) {
     return null;
   }
 
@@ -39,7 +39,9 @@ export function HoverCell({
         // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       id="hoverCell"
-    />
+    >
+      hai
+    </span>
   );
 }
 

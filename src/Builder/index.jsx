@@ -153,8 +153,8 @@ export function Builder() {
       let cellHeight =
         ROW_HEIGHT_UNIT === "px" ? ROW_HEIGHT : containerHeight / ROW_COUNT;
 
-      let colStart = Math.floor(mousePosRef.current.y / cellHeight);
-      let rowStart = Math.floor(mousePosRef.current.x / cellWidth);
+      let rowStart = Math.floor(mousePosRef.current.y / cellHeight);
+      let colStart = Math.floor(mousePosRef.current.x / cellWidth);
 
       let colEnd = colStart + activeWidgetConfig.colSpan();
       let rowEnd = rowStart + activeWidgetConfig.rowSpan();

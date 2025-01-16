@@ -70,6 +70,9 @@ function WidgetCell({
 
   const { colEnd, colStart, rowEnd, rowStart } = widgetLayoutConfig;
 
+  const widgetColspan = widgetLayoutConfig.colSpan();
+  const widgetRowSpan = widgetLayoutConfig.rowSpan();
+
   useEffect(() => {
     setWidgetLayoutConfig(widget.LayoutConfig);
   }, [widget]);
@@ -102,33 +105,40 @@ function WidgetCell({
   const onWindowMouseMove = useCallback(
     function onWindowMouseMoveFunction(e) {
       if (isResizing) {
-        let { col, row, colSpan, rowSpan } = widget.LayoutConfig;
+        let { colStart, rowStart, colSpan, rowSpan } = widget.LayoutConfig;
         // let { minColSpan, minRowSpan } = WIDGETS_CONFIG[widget.Type];
+
         switch (resizeDirection.current) {
           case RESIZE_DIRECTION.LEFT:
             {
+              let widgetStartCol = colStart;
               const diff =
                 (window.isRTL ? -1 : 1) * (e.screenX - resizeStarting.current);
               let noOfCol = Math.round(Math.abs(diff) / cellWidth);
               let isLeft = Math.sign(diff) < 0;
 
               if (isLeft) {
-                col = col - noOfCol;
-                colSpan = colSpan + noOfCol;
+                widgetStartCol = colStart - noOfCol;
+                // widget.LayoutConfig.colSpan =
+                //   widget.LayoutConfig.colSpan + noOfCol;
               } else {
-                col = col + noOfCol;
-                colSpan = colSpan - noOfCol;
+                widgetStartCol = colStart + noOfCol;
+                // widget.LayoutConfig.colSpan =
+                //   widget.LayoutConfig.colSpan - noOfCol;
               }
 
-              // if (col < 0 || colSpan > colCount || colSpan < minColSpan) {
-              //   return;
-              // }
+              if (widgetStartCol < 0 || colSpan > colCount || colSpan < 2) {
+                return;
+              }
 
-              setWidgetLayoutConfig((prevState) => ({
-                ...prevState,
-                col: col,
-                colSpan: colSpan
-              }));
+              setWidgetLayoutConfig((prevState) => {
+                // console.log({ widgetStartCol, prevState });
+                let updatedLayout = { ...prevState, colStart: widgetStartCol };
+                // console.log(updatedLayout, "updatedLayout");
+                return updatedLayout;
+
+                // colSpan: widget.LayoutConfig.colSpan
+              });
               // console.log(
               //   "move left",
               //   diff,
@@ -142,72 +152,77 @@ function WidgetCell({
             break;
           case RESIZE_DIRECTION.TOP:
             {
+              let widgetRowStart = rowStart;
               const diff = e.screenY - resizeStarting.current;
               let noOfRow = Math.round(Math.abs(diff) / cellHeight);
               let isTop = Math.sign(diff) < 0;
 
               if (isTop) {
-                row = row - noOfRow;
-                rowSpan = rowSpan + noOfRow;
+                widgetRowStart = rowStart - noOfRow;
+                // rowSpan = rowSpan + noOfRow;
               } else {
-                row = row + noOfRow;
-                rowSpan = rowSpan - noOfRow;
+                widgetRowStart = rowStart + noOfRow;
+                // rowSpan = rowSpan - noOfRow;
               }
 
-              // if (row < 0 || rowSpan > rowCount || rowSpan < minRowSpan) {
-              //   return;
-              // }
+              if (rowStart < 0 || rowSpan > rowCount || rowSpan < 2) {
+                return;
+              }
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
-                row,
-                rowSpan
+                rowStart: widgetRowStart
               }));
               // console.log("move left", diff, noOfRow, isTop);
             }
             break;
           case RESIZE_DIRECTION.RIGHT:
             {
+              let widgetColEnd = colEnd;
               const diff =
                 (window.isRTL ? -1 : 1) * (e.screenX - resizeStarting.current);
               let noOfCol = Math.round(Math.abs(diff) / cellWidth);
               let isRight = Math.sign(diff) > 0;
 
               if (isRight) {
-                colSpan = colSpan + noOfCol;
+                widgetColEnd = colEnd + noOfCol;
+                // colSpan = colSpan + noOfCol;
               } else {
-                colSpan = colSpan - noOfCol;
+                widgetColEnd = colEnd - noOfCol;
+                // colSpan = colSpan - noOfCol;
               }
 
-              // if (colSpan > colCount || colSpan < minColSpan) {
-              //   return;
-              // }
+              if (colEnd < colCount || colEnd < colStart) {
+                return;
+              }
 
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
-                colSpan
+                colEnd: widgetColEnd
               }));
               // console.log("move right", diff, noOfCol, isRight);
             }
             break;
           case RESIZE_DIRECTION.BOTTOM:
             {
+              let widgetRowEnd = rowEnd;
+
               const diff = e.screenY - resizeStarting.current;
               let noOfRow = Math.round(Math.abs(diff) / cellHeight);
               let isBottom = Math.sign(diff) > 0;
 
               if (isBottom) {
-                rowSpan = rowSpan + noOfRow;
+                widgetRowEnd = rowEnd + noOfRow;
               } else {
-                rowSpan = rowSpan - noOfRow;
+                widgetRowEnd = rowEnd - noOfRow;
               }
 
-              // if (rowSpan > rowCount || rowSpan < minRowSpan) {
-              //   return;
-              // }
+              if (rowEnd < rowCount || rowEnd > rowStart) {
+                return;
+              }
 
               setWidgetLayoutConfig((prevState) => ({
                 ...prevState,
-                rowSpan
+                rowEnd: widgetRowEnd
               }));
               // console.log("move bottom", diff, noOfRow, isBottom);
             }
@@ -217,16 +232,15 @@ function WidgetCell({
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       cellHeight,
       cellWidth,
       colCount,
+      colEnd,
       isResizing,
       rowCount,
-      widget.LayoutConfig,
-      widget.Type,
-      widgetLayoutConfig
+      rowEnd,
+      widget.LayoutConfig
     ]
   );
 
@@ -258,17 +272,19 @@ function WidgetCell({
 
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
-      let totalColumnOccupied = getSpanCount(colStart, colEnd);
-      let totalRowOccupied = getSpanCount(rowStart, rowEnd);
-
-      return {
-        top: `${colStart * cellHeight}px`,
-        left: `${rowStart * cellWidth}px`,
-        width: `${totalColumnOccupied * cellWidth}px`,
-        height: `${totalRowOccupied * cellHeight}px`
+      // let totalColumnOccupied = getSpanCount(colStart, colEnd);
+      // let totalRowOccupied = getSpanCount(rowStart, rowEnd);
+      let check = {
+        top: `${rowStart * cellHeight}px`,
+        left: `${colStart * cellWidth}px`,
+        width: `${widgetColspan * cellWidth}px`,
+        height: `${widgetRowSpan * cellHeight}px`
       };
+
+      console.log(check);
+      return check;
     },
-    [cellHeight, cellWidth, colEnd, colStart, rowEnd, rowStart]
+    [rowStart, cellHeight, colStart, cellWidth, widgetColspan, widgetRowSpan]
   );
 
   // const [value, setValue] = useState("100px");
@@ -293,6 +309,8 @@ function WidgetCell({
   //     };
   //   }
   // }, []);
+
+  console.log(widgetLayoutConfig, "final config ********");
 
   return (
     <div
