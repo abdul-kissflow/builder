@@ -1,4 +1,11 @@
-import { useMemo, useRef, useState, useDeferredValue, useEffect } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  useDeferredValue,
+  useEffect,
+  useReducer
+} from "react";
 
 import {
   DndContext,
@@ -21,9 +28,34 @@ import { LayoutWidgets } from "./widget.renderer";
 import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
 import { InputNumber, Select } from "antd";
-import { getSpanCount } from "./util";
+import { BuilderContext } from "./context";
+import { layoutRevalidateAndUpdate } from "./util";
+
+const reducer = (state, action) => {
+  switch (action.isAutoResize) {
+    case true:
+      // console.log("Size increasing", state, action);
+      return { ...action };
+    // return "Increasing";
+    case false:
+      console.log("Size updated", state);
+      return { ...action };
+    // return state - 1;
+    default:
+      return { isAutoResize: false, updatedColSpan: [0, 0], widgetId: "" };
+    // throw new Error();
+  }
+};
 
 export function Builder() {
+  let initialState = {
+    isAutoResize: false,
+    updatedColSpan: [0, 0],
+    widgetId: "",
+    increasedRowCount: 0
+  };
+  const [state, dispatch] = useReducer(reducer, initialState);
+
   const [configState, setConfigState] = useState(INITIAL_CONFIG);
   const config = useDeferredValue(configState);
   const [layoutModel, setLayoutModel] = useState(INITIAL_LAYOUT_WIDGETS_META);
@@ -36,6 +68,15 @@ export function Builder() {
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDetail, setHoverDetail] = useState({});
   const [activeWidget, setActiveWidget] = useState({});
+
+  const layoutWidgets = useMemo(
+    function getLayoutWidgets() {
+      let widgetsList = getWidgets(layoutModel);
+      return layoutRevalidateAndUpdate(widgetsList, state);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layoutModel, JSON.stringify(state)]
+  );
 
   const originLayoutModel = useRef(null);
   let containerRef = useRef(null);
@@ -252,14 +293,6 @@ export function Builder() {
     setHoverDetail({});
   }
 
-  const layoutWidgets = useMemo(
-    function getLayoutWidgets() {
-      return getWidgets(layoutModel);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [layoutModel]
-  );
-
   // // console.log("hover", hoverDetail, selectedWidget, config);
 
   const mouseSensor = useSensor(MouseSensor, {
@@ -331,19 +364,22 @@ export function Builder() {
                     : containerRef.current?.clientHeight / ROW_COUNT
                 }
               />
-              <LayoutWidgets
-                cardChildHeight={cardChildHeight}
-                widgets={layoutWidgets}
-                selectedWidget={selectedWidget}
-                onSelectWidget={setSelectedWidget}
-                cellWidth={cellWidth}
-                cellHeight={cellHeight}
-                colCount={COLUMN_COUNT}
-                rowCount={ROW_COUNT}
-                marginType={MARGIN_TYPE}
-                onResizeWidget={onResizeWidget}
-                onDeleteWidget={onDeleteWidget}
-              />
+              <BuilderContext.Provider value={{ state, dispatch }}>
+                <LayoutWidgets
+                  cardChildHeight={cardChildHeight}
+                  widgets={layoutWidgets}
+                  selectedWidget={selectedWidget}
+                  onSelectWidget={setSelectedWidget}
+                  cellWidth={cellWidth}
+                  cellHeight={cellHeight}
+                  colCount={COLUMN_COUNT}
+                  rowCount={ROW_COUNT}
+                  marginType={MARGIN_TYPE}
+                  onResizeWidget={onResizeWidget}
+                  onDeleteWidget={onDeleteWidget}
+                />
+              </BuilderContext.Provider>
+
               <HoverCell
                 cellHeight={cellHeight}
                 cellWidth={cellWidth}

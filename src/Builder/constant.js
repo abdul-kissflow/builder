@@ -23,10 +23,15 @@ export let WIDGET_CONFIG = {
     colStart: 2,
     colEnd: 5,
     rowSpan: function () {
-      return this.rowEnd - this.rowStart;
+      let diff = this.rowEnd - this.rowStart;
+      let lastCell = 1;
+      return diff + lastCell;
     },
     colSpan: function () {
-      return this.colEnd - this.colStart;
+      let diff = this.colEnd - this.colStart;
+      // it ended at starting of last cell need to complete last cell so added one
+      let lastCell = 1;
+      return diff + lastCell;
     }
   },
   [WIDGETS_TYPE.DROPDOWN]: {
@@ -35,10 +40,15 @@ export let WIDGET_CONFIG = {
     colStart: 0,
     colEnd: 4,
     rowSpan: function () {
-      return this.rowEnd - this.rowStart;
+      let diff = this.rowEnd - this.rowStart;
+      let lastCell = 1;
+      return diff + lastCell;
     },
     colSpan: function () {
-      return this.colEnd - this.colStart;
+      let diff = this.colEnd - this.colStart;
+      // it ended at starting of last cell need to complete last cell so added one
+      let lastCell = 1;
+      return diff + lastCell;
     }
   },
   [WIDGETS_TYPE.ICON]: {
@@ -47,10 +57,15 @@ export let WIDGET_CONFIG = {
     colStart: 0,
     colEnd: 2,
     rowSpan: function () {
-      return this.rowEnd - this.rowStart;
+      let diff = this.rowEnd - this.rowStart;
+      let lastCell = 1;
+      return diff + lastCell;
     },
     colSpan: function () {
-      return this.colEnd - this.colStart;
+      let diff = this.colEnd - this.colStart;
+      // it ended at starting of last cell need to complete last cell so added one
+      let lastCell = 1;
+      return diff + lastCell;
     }
   },
   [WIDGETS_TYPE.CARD]: {
@@ -59,10 +74,15 @@ export let WIDGET_CONFIG = {
     colStart: 2,
     colEnd: 8,
     rowSpan: function () {
-      return this.rowEnd - this.rowStart;
+      let diff = this.rowEnd - this.rowStart;
+      let lastCell = 1;
+      return diff + lastCell;
     },
     colSpan: function () {
-      return this.colEnd - this.colStart;
+      let diff = this.colEnd - this.colStart;
+      // it ended at starting of last cell need to complete last cell so added one
+      let lastCell = 1;
+      return diff + lastCell;
     }
   }
 };

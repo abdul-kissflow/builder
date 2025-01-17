@@ -1,10 +1,17 @@
-import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+  useContext
+} from "react";
 import PropTypes from "prop-types";
 import { useDraggable } from "@dnd-kit/core";
 
 import styles from "./builder.module.css";
-import { RESIZE_DIRECTION, WIDGETS_TYPE } from "./constant";
-import { getSpanCount } from "./util";
+import { RESIZE_DIRECTION } from "./constant";
+import { BuilderContext } from "./context";
 
 export function LayoutWidgets({
   widgets,
@@ -260,49 +267,84 @@ function WidgetCell({
     [onWindowMouseMove, onWindowMouseUp]
   );
 
-  // console.log("pos", widgetLayoutConfig);
-
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
-      // let totalColumnOccupied = getSpanCount(colStart, colEnd);
-      // let totalRowOccupied = getSpanCount(rowStart, rowEnd);
       let check = {
         top: `${rowStart * cellHeight}px`,
         left: `${colStart * cellWidth}px`,
         width: `${widgetColspan * cellWidth}px`,
         height: `${widgetRowSpan * cellHeight}px`
       };
-
-      console.log(check);
       return check;
     },
     [rowStart, cellHeight, colStart, cellWidth, widgetColspan, widgetRowSpan]
   );
 
-  // const [value, setValue] = useState("100px");
   const resizeObserverRef = useRef(null);
+  const resizeTimeout = useRef(null);
 
-  // const [widgetWidth, setWidgetWidth] = useState(0);
-  // const [widgetHeight, setWidgetHeight] = useState(0);
+  const widgetHeightRef = useRef(null);
 
-  // useEffect(function resizeObserver() {
-  //   if (resizeObserverRef.current) {
-  //     const observer = new ResizeObserver((entries) => {
-  //       let _height = entries[0].target.clientHeight;
-  //       let _width = entries[0].target.clientWidth;
-  //       setWidgetWidth(_height);
-  //       setWidgetHeight(_width);
-  //     });
-  //     observer.observe(resizeObserverRef.current);
+  const { state, dispatch } = useContext(BuilderContext);
 
-  //     // Cleanup function
-  //     return () => {
-  //       observer.disconnect();
-  //     };
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (resizeObserverRef.current) {
+      widgetHeightRef.current = resizeObserverRef.current.clientHeight;
+    }
+  }, []);
 
-  console.log(widgetLayoutConfig, "final config ********");
+  useEffect(function resizeObserver() {
+    let resizeTimeoutRef = resizeTimeout.current;
+
+    function handleResize(entries) {
+      if (resizeTimeoutRef) {
+        clearTimeout(resizeTimeoutRef);
+      }
+
+      resizeTimeout.current = setTimeout(() => {
+        let _height = entries[0].target.clientHeight;
+
+        if (
+          widgetHeightRef.current !== 0 &&
+          widgetHeightRef.current !== _height
+        ) {
+          // setWidgetHeight(_height);
+          widgetResizing(widgetHeightRef.current, _height);
+          widgetHeightRef.current = _height;
+        }
+      }, 2000);
+    }
+
+    const observer = new ResizeObserver((entries) => handleResize(entries));
+    if (resizeObserverRef.current) {
+      observer.observe(resizeObserverRef.current);
+    }
+
+    // Cleanup function
+    return () => {
+      if (resizeTimeoutRef) {
+        clearTimeout(resizeTimeoutRef);
+      }
+      observer.disconnect();
+    };
+  }, []);
+
+  function calculateRowCountByHeight(prevHeight, newHeight) {
+    let heightDiff = Math.abs(newHeight - prevHeight);
+    return heightDiff / cellHeight;
+  }
+
+  function widgetResizing(prevHeight, newHeight) {
+    let increasedRowCount = calculateRowCountByHeight(prevHeight, newHeight);
+
+    dispatch({
+      isAutoResize: true,
+      colStart,
+      colEnd,
+      widgetId: widget.Id,
+      increasedRowCount: increasedRowCount
+    });
+  }
 
   return (
     <div
@@ -332,10 +374,9 @@ function WidgetCell({
       {...listeners}
       {...attributes}
     >
-      {/* {`${widgetWidth} x ${widgetHeight}`} */}
       <div className={styles.content}>
         <label>{widget.Id}</label>
-
+        {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`}
         {/* /* auto grow poc */}
         {/* {widget.Type === WIDGETS_TYPE.CARD && (
           <div className={styles.growableChildrenWrapper}>
