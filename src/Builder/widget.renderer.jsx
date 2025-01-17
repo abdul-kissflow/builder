@@ -312,7 +312,7 @@ function WidgetCell({
           widgetResizing(widgetHeightRef.current, _height);
           widgetHeightRef.current = _height;
         }
-      }, 2000);
+      }, 200);
     }
 
     const observer = new ResizeObserver((entries) => handleResize(entries));
@@ -330,20 +330,22 @@ function WidgetCell({
   }, []);
 
   function calculateRowCountByHeight(prevHeight, newHeight) {
-    let heightDiff = Math.abs(newHeight - prevHeight);
-    return heightDiff / cellHeight;
+    let heightDiff = newHeight - prevHeight;
+    return Math.round(heightDiff / cellHeight);
   }
 
   function widgetResizing(prevHeight, newHeight) {
-    let increasedRowCount = calculateRowCountByHeight(prevHeight, newHeight);
+    if (prevHeight !== newHeight) {
+      let rowCount = calculateRowCountByHeight(prevHeight, newHeight);
 
-    dispatch({
-      isAutoResize: true,
-      colStart,
-      colEnd,
-      widgetId: widget.Id,
-      increasedRowCount: increasedRowCount
-    });
+      dispatch({
+        isAutoResize: true,
+        colStart,
+        colEnd,
+        widgetId: widget.Id,
+        updatedRowCount: rowCount
+      });
+    }
   }
 
   return (
@@ -376,7 +378,7 @@ function WidgetCell({
     >
       <div className={styles.content}>
         <label>{widget.Id}</label>
-        {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`}
+        {/* {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`} */}
         {/* /* auto grow poc */}
         {/* {widget.Type === WIDGETS_TYPE.CARD && (
           <div className={styles.growableChildrenWrapper}>

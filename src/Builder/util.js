@@ -19,14 +19,13 @@ export function layoutRevalidateAndUpdate(widgetsList, updatedWidgetConfig) {
       const { LayoutConfig: widgetConfig } = widgetInfo;
       if (widgetInfo.Id !== updatedWidgetConfig.widgetId) {
         if (isColumnCollided(updatedWidgetConfig, widgetConfig)) {
-          console.log("same col widget", widgetInfo.Id);
           widgetInfo.LayoutConfig["rowStart"] =
             widgetInfo.LayoutConfig["rowStart"] +
-            updatedWidgetConfig.increasedRowCount;
+            updatedWidgetConfig.updatedRowCount;
 
           widgetInfo.LayoutConfig["rowEnd"] =
             widgetInfo.LayoutConfig["rowEnd"] +
-            updatedWidgetConfig.increasedRowCount;
+            updatedWidgetConfig.updatedRowCount;
         } else {
           console.log("diff col widget", widgetInfo.Id);
         }

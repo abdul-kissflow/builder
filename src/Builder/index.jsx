@@ -31,6 +31,14 @@ import { InputNumber, Select } from "antd";
 import { BuilderContext } from "./context";
 import { layoutRevalidateAndUpdate } from "./util";
 
+const DEFAULT_CONFIG = {
+  isAutoResize: false,
+  colStart: -1,
+  colEnd: -1,
+  widgetId: "",
+  updatedRowCount: 0
+};
+
 const reducer = (state, action) => {
   switch (action.isAutoResize) {
     case true:
@@ -39,22 +47,16 @@ const reducer = (state, action) => {
     // return "Increasing";
     case false:
       console.log("Size updated", state);
-      return { ...action };
+      return { ...DEFAULT_CONFIG };
     // return state - 1;
     default:
-      return { isAutoResize: false, updatedColSpan: [0, 0], widgetId: "" };
+      return { ...DEFAULT_CONFIG };
     // throw new Error();
   }
 };
 
 export function Builder() {
-  let initialState = {
-    isAutoResize: false,
-    updatedColSpan: [0, 0],
-    widgetId: "",
-    increasedRowCount: 0
-  };
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, DEFAULT_CONFIG);
 
   const [configState, setConfigState] = useState(INITIAL_CONFIG);
   const config = useDeferredValue(configState);
@@ -72,7 +74,9 @@ export function Builder() {
   const layoutWidgets = useMemo(
     function getLayoutWidgets() {
       let widgetsList = getWidgets(layoutModel);
-      return layoutRevalidateAndUpdate(widgetsList, state);
+      let newLayout = layoutRevalidateAndUpdate(widgetsList, state);
+      dispatch({ isAutoResize: false });
+      return newLayout;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [layoutModel, JSON.stringify(state)]
