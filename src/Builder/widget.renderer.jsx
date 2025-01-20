@@ -337,15 +337,18 @@ function WidgetCell({
   function widgetResizing(prevHeight, newHeight) {
     if (prevHeight !== newHeight) {
       let rowCount = calculateRowCountByHeight(prevHeight, newHeight);
-
-      dispatch({
-        isAutoResize: true,
-        colStart,
-        colEnd,
-        widgetId: widget.Id,
-        updatedRowCount: rowCount
-      });
+      if (rowCount !== 0) {
+        dispatch({
+          type: "RESIZING",
+          isAutoResize: true,
+          colStart,
+          colEnd,
+          widgetId: widget.Id,
+          updatedRowCount: rowCount
+        });
+      }
     }
+    // dispatch({ type: "", updatedRowCount: 0, isAutoResize: false });
   }
 
   return (
@@ -376,7 +379,7 @@ function WidgetCell({
       {...listeners}
       {...attributes}
     >
-      <div className={styles.content}>
+      <div ref={resizeObserverRef} className={styles.content}>
         <label>{widget.Id}</label>
         {/* {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`} */}
         {/* /* auto grow poc */}
@@ -396,7 +399,6 @@ function WidgetCell({
         className={`${styles.overlayContainer} ${
           isResizing ? styles.resizing : ""
         }`}
-        ref={resizeObserverRef}
         onMouseDown={onMouseDown}
       >
         {selected && (

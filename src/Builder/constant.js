@@ -24,14 +24,11 @@ export let WIDGET_CONFIG = {
     colEnd: 5,
     rowSpan: function () {
       let diff = this.rowEnd - this.rowStart;
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     },
     colSpan: function () {
       let diff = this.colEnd - this.colStart;
-      // it ended at starting of last cell need to complete last cell so added one
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     }
   },
   [WIDGETS_TYPE.DROPDOWN]: {
@@ -41,14 +38,11 @@ export let WIDGET_CONFIG = {
     colEnd: 4,
     rowSpan: function () {
       let diff = this.rowEnd - this.rowStart;
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     },
     colSpan: function () {
       let diff = this.colEnd - this.colStart;
-      // it ended at starting of last cell need to complete last cell so added one
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     }
   },
   [WIDGETS_TYPE.ICON]: {
@@ -58,14 +52,11 @@ export let WIDGET_CONFIG = {
     colEnd: 2,
     rowSpan: function () {
       let diff = this.rowEnd - this.rowStart;
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     },
     colSpan: function () {
       let diff = this.colEnd - this.colStart;
-      // it ended at starting of last cell need to complete last cell so added one
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     }
   },
   [WIDGETS_TYPE.CARD]: {
@@ -75,14 +66,11 @@ export let WIDGET_CONFIG = {
     colEnd: 8,
     rowSpan: function () {
       let diff = this.rowEnd - this.rowStart;
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     },
     colSpan: function () {
       let diff = this.colEnd - this.colStart;
-      // it ended at starting of last cell need to complete last cell so added one
-      let lastCell = 1;
-      return diff + lastCell;
+      return diff;
     }
   }
 };

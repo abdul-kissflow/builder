@@ -40,17 +40,14 @@ const DEFAULT_CONFIG = {
 };
 
 const reducer = (state, action) => {
-  switch (action.isAutoResize) {
-    case true:
-      // console.log("Size increasing", state, action);
-      return { ...action };
-    // return "Increasing";
-    case false:
-      console.log("Size updated", state);
-      return { ...DEFAULT_CONFIG };
-    // return state - 1;
+  switch (action.type) {
+    case "RESIZING":
+      return { ...state, ...action };
+    case "STOP":
+      console.log("Size stoped", state);
+      return { ...state, ...action };
     default:
-      return { ...DEFAULT_CONFIG };
+      return { ...DEFAULT_CONFIG, ...action };
     // throw new Error();
   }
 };
@@ -74,12 +71,10 @@ export function Builder() {
   const layoutWidgets = useMemo(
     function getLayoutWidgets() {
       let widgetsList = getWidgets(layoutModel);
-      let newLayout = layoutRevalidateAndUpdate(widgetsList, state);
-      dispatch({ isAutoResize: false });
-      return newLayout;
+      return layoutRevalidateAndUpdate(widgetsList, state, dispatch);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [layoutModel, JSON.stringify(state)]
+    [layoutModel, state.isAutoResize]
   );
 
   const originLayoutModel = useRef(null);

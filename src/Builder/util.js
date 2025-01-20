@@ -11,7 +11,11 @@ function isColumnCollided(updatedWidgetConfig, widgetConfig) {
   );
 }
 
-export function layoutRevalidateAndUpdate(widgetsList, updatedWidgetConfig) {
+export function layoutRevalidateAndUpdate(
+  widgetsList,
+  updatedWidgetConfig,
+  dispatch
+) {
   let oldWidgetList = [...widgetsList];
   console.log({ widgetsList, updatedWidgetConfig });
   if (updatedWidgetConfig.isAutoResize) {
@@ -31,6 +35,7 @@ export function layoutRevalidateAndUpdate(widgetsList, updatedWidgetConfig) {
         }
       }
     });
+    dispatch({ type: "STOP", updatedRowCount: 0, isAutoResize: false });
   }
 
   return oldWidgetList;
