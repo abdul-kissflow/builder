@@ -279,7 +279,7 @@ export function Builder() {
     setHoverDetail({});
   }
 
-  function handleDragCancel(e) {
+  function handleDragCancel() {
     // // console.log("cancel", e);
     setIsDragging(false);
     setActiveWidget({});

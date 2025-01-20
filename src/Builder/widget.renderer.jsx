@@ -67,12 +67,8 @@ function WidgetCell({
   const [widgetLayoutConfig, setWidgetLayoutConfig] = useState(
     widget.LayoutConfig
   );
-  const [isResizing, setIsResizing] = useState(false);
 
-  const resizeDirection = useRef(null);
-  const resizeStarting = useRef(null);
-
-  const { colEnd, colStart, rowEnd, rowStart } = widgetLayoutConfig;
+  const { colStart, rowStart } = widgetLayoutConfig;
 
   const widgetColspan = widgetLayoutConfig.colSpan();
   const widgetRowSpan = widgetLayoutConfig.rowSpan();
@@ -81,30 +77,293 @@ function WidgetCell({
     setWidgetLayoutConfig(widget.LayoutConfig);
   }, [widget]);
 
-  const onMouseDown = useCallback(function onHeaderMouseDownFunction(e) {
-    if (e.target.dataset.resizer) {
-      e.stopPropagation();
-      switch (e.target.dataset.resizer) {
-        case RESIZE_DIRECTION.LEFT:
-        case RESIZE_DIRECTION.RIGHT:
-          resizeStarting.current = e.screenX;
-          break;
-        case RESIZE_DIRECTION.TOP:
-        case RESIZE_DIRECTION.BOTTOM:
-          resizeStarting.current = e.screenY;
-          break;
-        default:
-          null;
+  const widgetAlignmentProperties = useMemo(
+    function getWidgetAlignemntProperties() {
+      let check = {
+        top: `${rowStart * cellHeight}px`,
+        left: `${colStart * cellWidth}px`,
+        width: `${widgetColspan * cellWidth}px`,
+        height: `${widgetRowSpan * cellHeight}px`
+      };
+      return check;
+    },
+    [rowStart, cellHeight, colStart, cellWidth, widgetColspan, widgetRowSpan]
+  );
+
+  return (
+    <div
+      className={`${styles.widgetCell} ${selected ? styles.selected : ""} ${
+        marginType === "default" ? styles.defaultMargin : ""
+      }`}
+      style={{
+        position: "absolute",
+        ...widgetAlignmentProperties
+
+        /* auto grow poc */
+        // height: "auto"
+        // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
+      }}
+      ref={setNodeRef}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(widget.Id);
+      }}
+      onKeyDown={(e) => {
+        // console.log("delete", e);
+        if (e.key === "Backspace") {
+          onDelete(widget.Id);
+        }
+      }}
+      id={widget.Id}
+      {...listeners}
+      {...attributes}
+    >
+      <WidgetHandler
+        selected={selected}
+        rowCount={rowCount}
+        cellHeight={cellHeight}
+        colCount={colCount}
+        cellWidth={cellWidth}
+        onResize={onResize}
+        widget={widget}
+        widgetLayoutConfig={widgetLayoutConfig}
+        setWidgetLayoutConfig={setWidgetLayoutConfig}
+      />
+    </div>
+  );
+}
+
+WidgetCell.propTypes = {
+  widget: PropTypes.shape({
+    Id: PropTypes.string,
+    Name: PropTypes.string,
+    Type: PropTypes.string,
+    LayoutConfig: PropTypes.shape({
+      colStart: PropTypes.number,
+      colEnd: PropTypes.number,
+      rowStart: PropTypes.number,
+      rowEnd: PropTypes.number,
+      rowSpan: PropTypes.number,
+      colSpan: PropTypes.number
+    })
+  }),
+  selected: PropTypes.bool,
+  onSelect: PropTypes.func,
+  onResize: PropTypes.func,
+  onDelete: PropTypes.func,
+  cellWidth: PropTypes.number,
+  cellHeight: PropTypes.number,
+  colCount: PropTypes.number,
+  rowCount: PropTypes.number,
+  marginType: PropTypes.string
+};
+
+WidgetHandler.propTypes = {
+  widgetLayoutConfig: PropTypes.shape({
+    colStart: PropTypes.number,
+    colEnd: PropTypes.number,
+    rowStart: PropTypes.number,
+    rowEnd: PropTypes.number,
+    rowSpan: PropTypes.number,
+    colSpan: PropTypes.number
+  }),
+  widget: PropTypes.shape({
+    Id: PropTypes.string
+  }),
+  cellHeight: PropTypes.number
+};
+
+function WidgetHandler(props) {
+  const { heightConfiguredWidgets, selectedWidget } =
+    useContext(BuilderContext);
+
+  const { widgetLayoutConfig, widget, cellHeight } = props;
+
+  if (heightConfiguredWidgets[selectedWidget] === "auto") {
+    return (
+      <AutogrowWidget
+        cellHeight={cellHeight}
+        widget={widget}
+        widgetLayoutConfig={widgetLayoutConfig}
+        widgetId={selectedWidget}
+      >
+        <WidgetRenderer {...props} />
+      </AutogrowWidget>
+    );
+  }
+
+  return <WidgetRenderer {...props} />;
+}
+
+AutogrowWidget.propTypes = {
+  widget: PropTypes.shape({
+    Id: PropTypes.string
+  }),
+  widgetId: PropTypes.string,
+  children: PropTypes.node,
+  widgetLayoutConfig: PropTypes.shape({
+    colStart: PropTypes.number,
+    colEnd: PropTypes.number,
+    rowStart: PropTypes.number,
+    rowEnd: PropTypes.number,
+    rowSpan: PropTypes.number,
+    colSpan: PropTypes.number
+  }),
+  cellHeight: PropTypes.number
+};
+
+function AutogrowWidget({
+  widgetId,
+  children,
+  widget,
+  widgetLayoutConfig,
+  cellHeight
+}) {
+  const resizeObserverRef = useRef(null);
+  const resizeTimeout = useRef(null);
+
+  const { rowEnd, colStart, colEnd } = widgetLayoutConfig;
+
+  const widgetHeightRef = useRef(null);
+
+  const { dispatch } = useContext(BuilderContext);
+
+  function calculateRowCountByHeight(prevHeight, newHeight) {
+    let heightDiff = newHeight - prevHeight;
+    return Math.round(heightDiff / cellHeight);
+  }
+
+  function widgetResizing(prevHeight, newHeight) {
+    if (prevHeight !== newHeight) {
+      let rowCount = calculateRowCountByHeight(prevHeight, newHeight);
+      if (rowCount !== 0) {
+        dispatch({
+          type: "RESIZING",
+          isAutoResize: true,
+          rowEnd: rowEnd,
+          colStart,
+          colEnd,
+          widgetId: widget.Id,
+          updatedRowCount: rowCount
+        });
       }
-      resizeDirection.current = e.target.dataset.resizer;
-      // console.log(
-      //   "mouse down",
-      //   resizeDirection.current,
-      //   resizeStarting.current
-      // );
-      setIsResizing(true);
+    }
+    // dispatch({ type: "", updatedRowCount: 0, isAutoResize: false });
+  }
+
+  useEffect(() => {
+    if (resizeObserverRef.current) {
+      widgetHeightRef.current = resizeObserverRef.current.clientHeight;
     }
   }, []);
+
+  useEffect(function resizeObserver() {
+    let resizeTimeoutRef = resizeTimeout.current;
+
+    function handleResize(entries) {
+      if (resizeTimeoutRef) {
+        clearTimeout(resizeTimeoutRef);
+      }
+
+      resizeTimeout.current = setTimeout(() => {
+        let _height = entries[0].target.clientHeight;
+
+        if (
+          widgetHeightRef.current !== 0 &&
+          widgetHeightRef.current !== _height
+        ) {
+          // setWidgetHeight(_height);
+          widgetResizing(widgetHeightRef.current, _height);
+          widgetHeightRef.current = _height;
+        }
+      }, 200);
+    }
+
+    const observer = new ResizeObserver((entries) => handleResize(entries));
+    if (resizeObserverRef.current) {
+      observer.observe(resizeObserverRef.current);
+    }
+
+    // Cleanup function
+    return () => {
+      if (resizeTimeoutRef) {
+        clearTimeout(resizeTimeoutRef);
+      }
+      observer.disconnect();
+    };
+  }, []);
+  return (
+    <div
+      style={{ height: "100%" }}
+      ref={resizeObserverRef}
+      id={`${widgetId}-autogrow`}
+    >
+      {children}
+    </div>
+  );
+}
+
+WidgetRenderer.propTypes = {
+  widget: PropTypes.shape({
+    Id: PropTypes.string,
+    Name: PropTypes.string,
+    Type: PropTypes.string,
+    LayoutConfig: PropTypes.shape({
+      colStart: PropTypes.number,
+      colEnd: PropTypes.number,
+      rowStart: PropTypes.number,
+      rowEnd: PropTypes.number,
+      rowSpan: PropTypes.number,
+      colSpan: PropTypes.number
+    })
+  }),
+  selected: PropTypes.bool,
+  onSelect: PropTypes.func,
+  onResize: PropTypes.func,
+  onDelete: PropTypes.func,
+  cellWidth: PropTypes.number,
+  cellHeight: PropTypes.number,
+  colCount: PropTypes.number,
+  rowCount: PropTypes.number,
+  marginType: PropTypes.string,
+  widgetLayoutConfig: PropTypes.shape({
+    colStart: PropTypes.number,
+    colEnd: PropTypes.number,
+    rowStart: PropTypes.number,
+    rowEnd: PropTypes.number,
+    rowSpan: PropTypes.number,
+    colSpan: PropTypes.number
+  }),
+  setWidgetLayoutConfig: PropTypes.func
+};
+
+function WidgetRenderer({
+  selected,
+  rowCount,
+  cellHeight,
+  colCount,
+  cellWidth,
+  onResize,
+  widget,
+  widgetLayoutConfig,
+  setWidgetLayoutConfig
+}) {
+  const [isResizing, setIsResizing] = useState(false);
+
+  const resizeDirection = useRef(null);
+  const resizeStarting = useRef(null);
+
+  const onWindowMouseUp = useCallback(
+    function onWindowMouseUp() {
+      if (isResizing) {
+        setIsResizing(false);
+        onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);
+        resizeStarting.current = null;
+        resizeDirection.current = null;
+      }
+    },
+    [isResizing, onResize, widget.Id, widgetLayoutConfig]
+  );
 
   const onWindowMouseMove = useCallback(
     function onWindowMouseMoveFunction(e) {
@@ -237,20 +496,34 @@ function WidgetCell({
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [cellHeight, cellWidth, colCount, isResizing, rowCount, widget.LayoutConfig]
   );
 
-  const onWindowMouseUp = useCallback(
-    function onWindowMouseUp() {
-      if (isResizing) {
-        setIsResizing(false);
-        onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);
-        resizeStarting.current = null;
-        resizeDirection.current = null;
+  const onMouseDown = useCallback(function onHeaderMouseDownFunction(e) {
+    if (e.target.dataset.resizer) {
+      e.stopPropagation();
+      switch (e.target.dataset.resizer) {
+        case RESIZE_DIRECTION.LEFT:
+        case RESIZE_DIRECTION.RIGHT:
+          resizeStarting.current = e.screenX;
+          break;
+        case RESIZE_DIRECTION.TOP:
+        case RESIZE_DIRECTION.BOTTOM:
+          resizeStarting.current = e.screenY;
+          break;
+        default:
+          null;
       }
-    },
-    [isResizing, onResize, widget.Id, widgetLayoutConfig]
-  );
+      resizeDirection.current = e.target.dataset.resizer;
+      // console.log(
+      //   "mouse down",
+      //   resizeDirection.current,
+      //   resizeStarting.current
+      // );
+      setIsResizing(true);
+    }
+  }, []);
 
   useEffect(
     function onWindowMouseChange() {
@@ -264,120 +537,12 @@ function WidgetCell({
     [onWindowMouseMove, onWindowMouseUp]
   );
 
-  const widgetAlignmentProperties = useMemo(
-    function getWidgetAlignemntProperties() {
-      let check = {
-        top: `${rowStart * cellHeight}px`,
-        left: `${colStart * cellWidth}px`,
-        width: `${widgetColspan * cellWidth}px`,
-        height: `${widgetRowSpan * cellHeight}px`
-      };
-      return check;
-    },
-    [rowStart, cellHeight, colStart, cellWidth, widgetColspan, widgetRowSpan]
-  );
-
-  const resizeObserverRef = useRef(null);
-  const resizeTimeout = useRef(null);
-
-  const widgetHeightRef = useRef(null);
-
-  const { dispatch } = useContext(BuilderContext);
-
-  useEffect(() => {
-    if (resizeObserverRef.current) {
-      widgetHeightRef.current = resizeObserverRef.current.clientHeight;
-    }
-  }, []);
-
-  useEffect(function resizeObserver() {
-    let resizeTimeoutRef = resizeTimeout.current;
-
-    function handleResize(entries) {
-      if (resizeTimeoutRef) {
-        clearTimeout(resizeTimeoutRef);
-      }
-
-      resizeTimeout.current = setTimeout(() => {
-        let _height = entries[0].target.clientHeight;
-
-        if (
-          widgetHeightRef.current !== 0 &&
-          widgetHeightRef.current !== _height
-        ) {
-          // setWidgetHeight(_height);
-          widgetResizing(widgetHeightRef.current, _height);
-          widgetHeightRef.current = _height;
-        }
-      }, 200);
-    }
-
-    const observer = new ResizeObserver((entries) => handleResize(entries));
-    if (resizeObserverRef.current) {
-      observer.observe(resizeObserverRef.current);
-    }
-
-    // Cleanup function
-    return () => {
-      if (resizeTimeoutRef) {
-        clearTimeout(resizeTimeoutRef);
-      }
-      observer.disconnect();
-    };
-  }, []);
-
-  function calculateRowCountByHeight(prevHeight, newHeight) {
-    let heightDiff = newHeight - prevHeight;
-    return Math.round(heightDiff / cellHeight);
-  }
-
-  function widgetResizing(prevHeight, newHeight) {
-    if (prevHeight !== newHeight) {
-      let rowCount = calculateRowCountByHeight(prevHeight, newHeight);
-      if (rowCount !== 0) {
-        dispatch({
-          type: "RESIZING",
-          isAutoResize: true,
-          rowEnd: rowEnd,
-          colStart,
-          colEnd,
-          widgetId: widget.Id,
-          updatedRowCount: rowCount
-        });
-      }
-    }
-    // dispatch({ type: "", updatedRowCount: 0, isAutoResize: false });
-  }
-
   return (
-    <div
-      className={`${styles.widgetCell} ${selected ? styles.selected : ""} ${
-        marginType === "default" ? styles.defaultMargin : ""
-      }`}
-      style={{
-        position: "absolute",
-        ...widgetAlignmentProperties
-
-        /* auto grow poc */
-        // height: "auto"
-        // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
-      }}
-      ref={setNodeRef}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(widget.Id);
-      }}
-      onKeyDown={(e) => {
-        // console.log("delete", e);
-        if (e.key === "Backspace") {
-          onDelete(widget.Id);
-        }
-      }}
-      id={widget.Id}
-      {...listeners}
-      {...attributes}
-    >
-      <div ref={resizeObserverRef} className={styles.content}>
+    <>
+      <div
+        // ref={resizeObserverRef}
+        className={styles.content}
+      >
         <label>{widget.Id}</label>
         {/* {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`} */}
         {/* /* auto grow poc */}
@@ -424,31 +589,6 @@ function WidgetCell({
           </>
         )}
       </div>
-    </div>
+    </>
   );
 }
-
-WidgetCell.propTypes = {
-  widget: PropTypes.shape({
-    Id: PropTypes.string,
-    Name: PropTypes.string,
-    Type: PropTypes.string,
-    LayoutConfig: PropTypes.shape({
-      colStart: PropTypes.number,
-      colEnd: PropTypes.number,
-      rowStart: PropTypes.number,
-      rowEnd: PropTypes.number,
-      rowSpan: PropTypes.number,
-      colSpan: PropTypes.number
-    })
-  }),
-  selected: PropTypes.bool,
-  onSelect: PropTypes.func,
-  onResize: PropTypes.func,
-  onDelete: PropTypes.func,
-  cellWidth: PropTypes.number,
-  cellHeight: PropTypes.number,
-  colCount: PropTypes.number,
-  rowCount: PropTypes.number,
-  marginType: PropTypes.string
-};
