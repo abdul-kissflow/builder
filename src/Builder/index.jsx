@@ -323,8 +323,6 @@ export function Builder() {
               position: "relative",
               height: "100%",
               width: "100%"
-              // paddingBlock: "20px",
-              // paddingInline: "12px"
             }}
           >
             <div
@@ -345,7 +343,6 @@ export function Builder() {
                     : ""
               }}
               onMouseDown={() => {
-                // // console.log("selected none");
                 setSelectedWidget("");
               }}
             >
