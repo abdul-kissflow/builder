@@ -94,6 +94,13 @@ export let WIDGET_CONFIG = {
 //   }
 // };
 
+const heightConfigurations = {
+  type: "height",
+  source: [
+    { label: "Fixed", value: "fixed" },
+    { label: "Auto", value: "auto" }
+  ]
+};
 export const WIDGETS_LIST = [
   {
     Name: "Input",
@@ -109,7 +116,8 @@ export const WIDGETS_LIST = [
       // row: WIDGET_CONFIG[WIDGETS_TYPE.INPUT].rowStart
       // colSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minColSpan,
       // rowSpan: WIDGETS_CONFIG[WIDGETS_TYPE.INPUT].minRowSpan
-    }
+    },
+    GeneralConfig: [heightConfigurations]
   },
   {
     Name: "Dropdown",
@@ -122,7 +130,8 @@ export const WIDGETS_LIST = [
       colEnd: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].colEnd,
       colSpan: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].colSpan,
       rowSpan: WIDGET_CONFIG[WIDGETS_TYPE.DROPDOWN].rowSpan
-    }
+    },
+    GeneralConfig: [heightConfigurations]
   },
   {
     Name: "Icon",
@@ -135,7 +144,8 @@ export const WIDGETS_LIST = [
       colEnd: WIDGET_CONFIG[WIDGETS_TYPE.ICON].colEnd,
       colSpan: WIDGET_CONFIG[WIDGETS_TYPE.ICON].colSpan,
       rowSpan: WIDGET_CONFIG[WIDGETS_TYPE.ICON].rowSpan
-    }
+    },
+    GeneralConfig: [heightConfigurations]
   },
   {
     Name: "Card",
@@ -148,7 +158,8 @@ export const WIDGETS_LIST = [
       colEnd: WIDGET_CONFIG[WIDGETS_TYPE.CARD].colEnd,
       colSpan: WIDGET_CONFIG[WIDGETS_TYPE.CARD].colSpan,
       rowSpan: WIDGET_CONFIG[WIDGETS_TYPE.CARD].rowSpan
-    }
+    },
+    GeneralConfig: [heightConfigurations]
   }
 ];
 

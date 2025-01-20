@@ -23,13 +23,11 @@ export function LayoutWidgets({
   onDeleteWidget,
   colCount,
   rowCount,
-  marginType,
-  cardChildHeight
+  marginType
 }) {
   return widgets.map((widget) => {
     return (
       <WidgetCell
-        cardChildHeight={cardChildHeight}
         key={widget.Id}
         widget={widget}
         cellWidth={cellWidth}
@@ -56,8 +54,7 @@ function WidgetCell({
   cellHeight,
   colCount,
   rowCount,
-  marginType,
-  cardChildHeight
+  marginType
 }) {
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: widget.Id,
@@ -285,7 +282,7 @@ function WidgetCell({
 
   const widgetHeightRef = useRef(null);
 
-  const { state, dispatch } = useContext(BuilderContext);
+  const { dispatch } = useContext(BuilderContext);
 
   useEffect(() => {
     if (resizeObserverRef.current) {
@@ -437,8 +434,10 @@ WidgetCell.propTypes = {
     Name: PropTypes.string,
     Type: PropTypes.string,
     LayoutConfig: PropTypes.shape({
-      col: PropTypes.number,
-      row: PropTypes.number,
+      colStart: PropTypes.number,
+      colEnd: PropTypes.number,
+      rowStart: PropTypes.number,
+      rowEnd: PropTypes.number,
       rowSpan: PropTypes.number,
       colSpan: PropTypes.number
     })

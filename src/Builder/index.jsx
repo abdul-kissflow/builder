@@ -6,7 +6,6 @@ import {
   useEffect,
   useReducer
 } from "react";
-
 import {
   DndContext,
   DragOverlay,
@@ -15,6 +14,7 @@ import {
   MouseSensor,
   useSensors
 } from "@dnd-kit/core";
+import PropTypes from "prop-types";
 
 import styles from "./builder.module.css";
 import {
@@ -27,9 +27,9 @@ import { DroppableArea } from "./dropable.area";
 import { LayoutWidgets } from "./widget.renderer";
 import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
-import { InputNumber, Select } from "antd";
 import { BuilderContext } from "./context";
 import { layoutRevalidateAndUpdate } from "./util";
+import { HeightInput } from "./general.config.widgets";
 
 const DEFAULT_CONFIG = {
   isAutoResize: false,
@@ -61,8 +61,7 @@ export function Builder() {
   const [selectedWidget, setSelectedWidget] = useState(
     INITIAL_LAYOUT_WIDGETS_META.root.Widgets[0]
   );
-
-  const [cardChildHeight, setCardChildHeight] = useState(50);
+  const [heightConfiguredWidgets, setHeightConfiguredWidgets] = useState({});
 
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDetail, setHoverDetail] = useState({});
@@ -306,58 +305,66 @@ export function Builder() {
   useEffect(function takeRef() {}, []);
 
   return (
-    <div className={styles.mainLayout}>
-      <DndContext
-        sensors={sensors}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-        collisionDetection={closestCorners}
-      >
-        <div className={styles.mainContainer}>
-          <LeftNav />
-          <div
-            style={{
-              position: "relative",
-              height: "100%",
-              width: "100%"
-            }}
-          >
+    <BuilderContext.Provider
+      value={{
+        state,
+        dispatch,
+        selectedWidget,
+        heightConfiguredWidgets,
+        onUpdateWidgetHeightConfig: setHeightConfiguredWidgets
+      }}
+    >
+      <div className={styles.mainLayout}>
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+          collisionDetection={closestCorners}
+        >
+          <div className={styles.mainContainer}>
+            <LeftNav />
             <div
-              data-name="ref-check"
-              ref={containerRef}
-              className={`${styles.container} ${
-                isDragging ? styles.isDragging : ""
-              }`}
               style={{
-                position: "absolute",
+                position: "relative",
                 height: "100%",
-                width: "100%",
-                "--col-count": COLUMN_COUNT,
-                "--row-height": `${ROW_HEIGHT}${ROW_HEIGHT_UNIT}`,
-                gridTemplateRows:
-                  ROW_HEIGHT_UNIT === "fr"
-                    ? `repeat(${ROW_COUNT}, ${ROW_HEIGHT}${ROW_HEIGHT_UNIT})`
-                    : ""
-              }}
-              onMouseDown={() => {
-                setSelectedWidget("");
+                width: "100%"
               }}
             >
-              <DroppableArea
-                colCount={COLUMN_COUNT}
-                rowCount={ROW_COUNT}
-                rowHeight={
-                  ROW_HEIGHT_UNIT === "px"
-                    ? ROW_HEIGHT
-                    : containerRef.current?.clientHeight / ROW_COUNT
-                }
-              />
-              <BuilderContext.Provider value={{ state, dispatch }}>
+              <div
+                data-name="ref-check"
+                ref={containerRef}
+                className={`${styles.container} ${
+                  isDragging ? styles.isDragging : ""
+                }`}
+                style={{
+                  position: "absolute",
+                  height: "100%",
+                  width: "100%",
+                  "--col-count": COLUMN_COUNT,
+                  "--row-height": `${ROW_HEIGHT}${ROW_HEIGHT_UNIT}`,
+                  gridTemplateRows:
+                    ROW_HEIGHT_UNIT === "fr"
+                      ? `repeat(${ROW_COUNT}, ${ROW_HEIGHT}${ROW_HEIGHT_UNIT})`
+                      : ""
+                }}
+                onMouseDown={() => {
+                  setSelectedWidget("");
+                }}
+              >
+                <DroppableArea
+                  colCount={COLUMN_COUNT}
+                  rowCount={ROW_COUNT}
+                  rowHeight={
+                    ROW_HEIGHT_UNIT === "px"
+                      ? ROW_HEIGHT
+                      : containerRef.current?.clientHeight / ROW_COUNT
+                  }
+                />
+
                 <LayoutWidgets
-                  cardChildHeight={cardChildHeight}
                   widgets={layoutWidgets}
                   selectedWidget={selectedWidget}
                   onSelectWidget={setSelectedWidget}
@@ -369,49 +376,78 @@ export function Builder() {
                   onResizeWidget={onResizeWidget}
                   onDeleteWidget={onDeleteWidget}
                 />
-              </BuilderContext.Provider>
 
-              <HoverCell
-                cellHeight={cellHeight}
-                cellWidth={cellWidth}
-                {...hoverDetail}
-              />
+                <HoverCell
+                  cellHeight={cellHeight}
+                  cellWidth={cellWidth}
+                  {...hoverDetail}
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <DragOverlay dropAnimation={null} style={{ cursor: "grabbing" }}>
-          {/* {activeWidget.Id ? (
+          <DragOverlay dropAnimation={null} style={{ cursor: "grabbing" }}>
+            {/* {activeWidget.Id ? (
             <DragWidget
               widget={activeWidget}
               hoverDetail={hoverDetail}
               config={config}
             />
           ) : null} */}
-        </DragOverlay>
-      </DndContext>
-      <aside>
-        <Config config={configState} setConfig={setConfigState} />
-        <GeneralConfig
-          height={cardChildHeight}
-          setHeight={setCardChildHeight}
-        />
-      </aside>
+          </DragOverlay>
+        </DndContext>
+        <aside>
+          <Config config={configState} setConfig={setConfigState} />
+          <GeneralConfig
+            selectedWidget={selectedWidget}
+            generalConfig={
+              selectedWidget
+                ? layoutModel[selectedWidget]?.["GeneralConfig"]
+                : []
+            }
+          />
+        </aside>
+      </div>
+    </BuilderContext.Provider>
+  );
+}
+
+GeneralConfig.propTypes = {
+  selectedWidget: PropTypes.string,
+  generalConfig: PropTypes.array
+};
+
+function GeneralConfig({ selectedWidget, generalConfig }) {
+  console.log({ selectedWidget, generalConfig }, "selectedWidget");
+
+  if (generalConfig.length < 0) {
+    return null;
+  }
+
+  return (
+    <div className={styles.generalWidgetWrapper}>
+      <div>General config</div>
+      <ConfigList generalConfig={generalConfig} />
     </div>
   );
 }
 
-function GeneralConfig({ height, setHeight }) {
-  return null;
+function ConfigList({ generalConfig }) {
+  return generalConfig.map((config, index) => (
+    <GeneralConfigWidget key={index} generalConfig={config} />
+  ));
+}
 
-  // return (
-  //   <div>
-  //     <div>Card chidren height</div>
-  //     <InputNumber value={height} onChange={(value) => setHeight(value)} />
-  //     <Select value={"px"} size="small">
-  //       <Select.Option key={"px"} value={"px"}>
-  //         px
-  //       </Select.Option>
-  //     </Select>
-  //   </div>
-  // );
+GeneralConfigWidget.propTypes = {
+  generalConfig: PropTypes.shape({
+    type: PropTypes.string
+  })
+};
+
+function GeneralConfigWidget({ generalConfig }) {
+  switch (generalConfig.type) {
+    case "height":
+      return <HeightInput type={generalConfig.type} config={generalConfig} />;
+    default:
+      return null;
+  }
 }
