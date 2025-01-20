@@ -13,6 +13,30 @@ function isColumnCollided(updatedWidgetConfig, widgetConfig) {
   );
 }
 
+function updateColumnRange(prevColRange, widgetColRange) {
+  let { colRangeStart, colRangeEnd } = prevColRange;
+  let { widgetColRangeStart, widgetColRangeEnd } = widgetColRange;
+
+  let colStart = colRangeStart;
+  let colEnd = colRangeEnd;
+
+  let newColStart = widgetColRangeStart;
+  let newColEnd = widgetColRangeEnd;
+
+  if (newColStart < colStart) {
+    colStart = newColStart;
+  }
+
+  if (newColEnd > colEnd) {
+    colEnd = newColEnd;
+  }
+
+  return {
+    colStart,
+    colEnd
+  };
+}
+
 export function layoutRevalidateAndUpdate(
   widgetsList,
   updatedWidgetConfig,
@@ -20,13 +44,35 @@ export function layoutRevalidateAndUpdate(
 ) {
   let oldWidgetList = [...widgetsList];
 
-  console.log({ widgetsList, updatedWidgetConfig });
+  let colRangeStart = updatedWidgetConfig.colStart;
+  let colRangeEnd = updatedWidgetConfig.colEnd;
 
   if (updatedWidgetConfig.isAutoResize) {
     oldWidgetList.forEach((widgetInfo) => {
       const { LayoutConfig: widgetConfig } = widgetInfo;
+
       if (widgetInfo.Id !== updatedWidgetConfig.widgetId) {
-        if (isColumnCollided(updatedWidgetConfig, widgetConfig)) {
+        if (
+          isColumnCollided(
+            {
+              rowEnd: updatedWidgetConfig.rowEnd,
+              colStart: colRangeStart,
+              colEnd: colRangeEnd
+            },
+            widgetConfig
+          )
+        ) {
+          let { colStart, colEnd } = updateColumnRange(
+            { colRangeStart, colRangeEnd },
+            {
+              widgetColRangeStart: widgetConfig.colStart,
+              widgetColRangeEnd: widgetConfig.colEnd
+            }
+          );
+
+          colRangeStart = colStart;
+          colRangeEnd = colEnd;
+
           widgetInfo.LayoutConfig["rowStart"] =
             widgetInfo.LayoutConfig["rowStart"] +
             updatedWidgetConfig.updatedRowCount;
