@@ -4,9 +4,11 @@ export function getSpanCount(startCell, endCell) {
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
   return (
-    (updatedWidgetConfig.colStart <= widgetConfig.colStart &&
+    (updatedWidgetConfig.rowEnd < widgetConfig.rowStart &&
+      updatedWidgetConfig.colStart <= widgetConfig.colStart &&
       updatedWidgetConfig.colEnd >= widgetConfig.colStart) ||
-    (updatedWidgetConfig.colStart <= widgetConfig.colEnd &&
+    (updatedWidgetConfig.rowEnd < widgetConfig.rowStart &&
+      updatedWidgetConfig.colStart <= widgetConfig.colEnd &&
       updatedWidgetConfig.colEnd >= widgetConfig.colEnd)
   );
 }
@@ -17,7 +19,9 @@ export function layoutRevalidateAndUpdate(
   dispatch
 ) {
   let oldWidgetList = [...widgetsList];
+
   console.log({ widgetsList, updatedWidgetConfig });
+
   if (updatedWidgetConfig.isAutoResize) {
     oldWidgetList.forEach((widgetInfo) => {
       const { LayoutConfig: widgetConfig } = widgetInfo;

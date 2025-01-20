@@ -341,6 +341,7 @@ function WidgetCell({
         dispatch({
           type: "RESIZING",
           isAutoResize: true,
+          rowEnd: rowEnd,
           colStart,
           colEnd,
           widgetId: widget.Id,

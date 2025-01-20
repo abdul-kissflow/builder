@@ -256,11 +256,6 @@ export function Builder() {
           ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
           : currentWidget.Id,
         LayoutConfig: {
-          // col,
-          // colSpan: widgetColSpan || colSpan,
-          // rowSpan: widgetRowSpan || rowSpan,
-          // row: row
-
           ...activeWidgetConfig,
           rowStart: rowStart,
           rowEnd: rowEnd,
@@ -409,15 +404,17 @@ export function Builder() {
 }
 
 function GeneralConfig({ height, setHeight }) {
-  return (
-    <div>
-      <div>Card chidren height</div>
-      <InputNumber value={height} onChange={(value) => setHeight(value)} />
-      <Select value={"px"} size="small">
-        <Select.Option key={"px"} value={"px"}>
-          px
-        </Select.Option>
-      </Select>
-    </div>
-  );
+  return null;
+
+  // return (
+  //   <div>
+  //     <div>Card chidren height</div>
+  //     <InputNumber value={height} onChange={(value) => setHeight(value)} />
+  //     <Select value={"px"} size="small">
+  //       <Select.Option key={"px"} value={"px"}>
+  //         px
+  //       </Select.Option>
+  //     </Select>
+  //   </div>
+  // );
 }
