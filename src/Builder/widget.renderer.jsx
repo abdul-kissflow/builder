@@ -543,6 +543,7 @@ function WidgetRenderer({
       <div
         // ref={resizeObserverRef}
         className={styles.content}
+        id={widget.Id}
       >
         {/* <label>{widget.Id}</label> */}
         {/* {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`} */}
@@ -556,7 +557,7 @@ function WidgetRenderer({
             />
           </div>
         )} */}
-
+        <span style={{ fontSize: "x-small" }}>{widget.Id}</span>
         {/* /* auto grow poc */}
       </div>
       <div
