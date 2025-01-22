@@ -30,6 +30,7 @@ import { Config } from "./config";
 import { BuilderContext } from "./context";
 import { layoutRevalidateAndUpdate } from "./util";
 import { HeightInput } from "./general.config.widgets";
+import TextArea from "antd/es/input/TextArea";
 
 const DEFAULT_CONFIG = {
   isAutoResize: false,
@@ -304,16 +305,21 @@ export function Builder() {
 
   useEffect(function takeRef() {}, []);
 
-  return (
-    <BuilderContext.Provider
-      value={{
+  const storeObj = useMemo(
+    function getStoreObj() {
+      return {
         state,
         dispatch,
         selectedWidget,
         heightConfiguredWidgets,
         onUpdateWidgetHeightConfig: setHeightConfiguredWidgets
-      }}
-    >
+      };
+    },
+    [heightConfiguredWidgets, selectedWidget, state]
+  );
+
+  return (
+    <BuilderContext.Provider value={storeObj}>
       <div className={styles.mainLayout}>
         <DndContext
           sensors={sensors}
@@ -427,6 +433,7 @@ function GeneralConfig({ selectedWidget, generalConfig }) {
     <div className={styles.generalWidgetWrapper}>
       <div>General config</div>
       <ConfigList generalConfig={generalConfig} />
+      <TextInput />
     </div>
   );
 }
@@ -450,4 +457,12 @@ function GeneralConfigWidget({ generalConfig }) {
     default:
       return null;
   }
+}
+
+TextInput.propTypes = {
+  type: PropTypes.string
+};
+
+function TextInput() {
+  return <TextArea placeholder="Autosize" autoSize />;
 }

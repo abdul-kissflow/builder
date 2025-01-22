@@ -92,6 +92,7 @@ function WidgetCell({
 
   return (
     <div
+      id={`${widget.Id}-alignerWrapper`}
       className={`${styles.widgetCell} ${selected ? styles.selected : ""} ${
         marginType === "default" ? styles.defaultMargin : ""
       }`}
@@ -114,7 +115,6 @@ function WidgetCell({
           onDelete(widget.Id);
         }
       }}
-      id={widget.Id}
       {...listeners}
       {...attributes}
     >
@@ -292,6 +292,7 @@ function AutogrowWidget({
       observer.disconnect();
     };
   }, []);
+
   return (
     <div
       style={{ height: "100%" }}
@@ -543,7 +544,7 @@ function WidgetRenderer({
         // ref={resizeObserverRef}
         className={styles.content}
       >
-        <label>{widget.Id}</label>
+        {/* <label>{widget.Id}</label> */}
         {/* {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`} */}
         {/* /* auto grow poc */}
         {/* {widget.Type === WIDGETS_TYPE.CARD && (

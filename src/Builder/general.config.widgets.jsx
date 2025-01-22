@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import PropTypes from "prop-types";
 
 import { Control } from "./control";
@@ -29,6 +29,7 @@ export function HeightInput({ type, config }) {
   }
 
   console.log(type, "Genenral config");
+
   return (
     <div>
       <Control

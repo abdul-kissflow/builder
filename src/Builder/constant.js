@@ -61,7 +61,7 @@ export let WIDGET_CONFIG = {
   },
   [WIDGETS_TYPE.CARD]: {
     rowStart: 2,
-    rowEnd: 8,
+    rowEnd: 12,
     colStart: 2,
     colEnd: 8,
     rowSpan: function () {
