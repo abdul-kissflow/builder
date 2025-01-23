@@ -68,13 +68,28 @@ export function Builder() {
   const [hoverDetail, setHoverDetail] = useState({});
   const [activeWidget, setActiveWidget] = useState({});
 
-  const layoutWidgets = useMemo(
-    function getLayoutWidgets() {
+  const [layoutModelWidget, setLayoutModelWidget] = useState([]);
+
+  useEffect(
+    function updateLayoutModel() {
       let widgetsList = getWidgets(layoutModel);
-      return layoutRevalidateAndUpdate(widgetsList, state, dispatch);
+      setLayoutModelWidget(widgetsList);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [layoutModel, state.isAutoResize]
+    [layoutModel]
+  );
+
+  useEffect(
+    function updateWhileAutoGrow() {
+      if (state.isAutoResize) {
+        let result = layoutRevalidateAndUpdate(
+          layoutModelWidget,
+          state,
+          dispatch
+        );
+        setLayoutModelWidget(result);
+      }
+    },
+    [state.isAutoResize]
   );
 
   const originLayoutModel = useRef(null);
@@ -138,8 +153,6 @@ export function Builder() {
     let widget = e.active.data.current.widget;
     const dragWidget = document.querySelector(`[id=${widget.Id}]`);
 
-    // console.dir(dragWidget);
-
     const { left: containerLeftOffset, top: containerTopOffset } =
       containerRef.current.getBoundingClientRect();
     const { left: dragWidgetLeftOffset, top: dragWidgetTopOffset } =
@@ -149,7 +162,6 @@ export function Builder() {
     widgetPosRef.current.x = containerLeftOffset - dragWidgetLeftOffset;
     widgetPosRef.current.y = containerTopOffset - dragWidgetTopOffset;
 
-    // console.log("start", widgetPosRef.current, e, e.active.rect.current);
     setIsDragging(true);
     setActiveWidget(widget);
 
@@ -232,14 +244,12 @@ export function Builder() {
   }
 
   function handleDragOver(e) {
-    // // console.log("over", e);
     if (!e.over) {
       return;
     }
   }
 
   function handleDragEnd(e) {
-    // // console.log("end", e);
     const { over, active } = e;
     if (over && over?.data.current.type === "AddCell") {
       let type = active?.data.current.type;
@@ -253,7 +263,7 @@ export function Builder() {
         ...currentWidget,
         Type: currentWidget.Type,
         Id: type
-          ? `${currentWidget.Id}_${layoutWidgets.length + 1}`
+          ? `${currentWidget.Id}_${layoutModelWidget.length + 1}`
           : currentWidget.Id,
         LayoutConfig: {
           ...activeWidgetConfig,
@@ -264,11 +274,9 @@ export function Builder() {
         }
       };
       let newLayoutModel = setWidget(layoutModel, widget);
-      // // console.log("DragEnd - layoutModel", newLayoutModel);
       setLayoutModel(newLayoutModel);
       setSelectedWidget(widget.Id);
       if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - rowEnd < 10) {
-        // // console.log("adding rows");
         setConfigState((prevState) => ({
           ...prevState,
           ROW_COUNT: ROW_COUNT + 20
@@ -281,13 +289,10 @@ export function Builder() {
   }
 
   function handleDragCancel() {
-    // // console.log("cancel", e);
     setIsDragging(false);
     setActiveWidget({});
     setHoverDetail({});
   }
-
-  // // console.log("hover", hoverDetail, selectedWidget, config);
 
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -370,7 +375,7 @@ export function Builder() {
                   }
                 />
                 <LayoutWidgets
-                  widgets={layoutWidgets}
+                  widgets={layoutModelWidget}
                   selectedWidget={selectedWidget}
                   onSelectWidget={setSelectedWidget}
                   cellWidth={cellWidth}
