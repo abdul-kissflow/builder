@@ -19,6 +19,7 @@ import PropTypes from "prop-types";
 import styles from "./builder.module.css";
 import {
   DELAY_TO_DRAG,
+  GENERAL_CONFIG,
   INITIAL_CONFIG,
   INITIAL_LAYOUT_WIDGETS_META
 } from "./constant";
@@ -62,7 +63,7 @@ export function Builder() {
   const [selectedWidget, setSelectedWidget] = useState(
     INITIAL_LAYOUT_WIDGETS_META.root.Widgets[0]
   );
-  const [heightConfiguredWidgets, setHeightConfiguredWidgets] = useState({});
+  const [widgetsConfig, setWidgetConfig] = useState({});
 
   const [isDragging, setIsDragging] = useState(false);
   const [hoverDetail, setHoverDetail] = useState({});
@@ -311,12 +312,19 @@ export function Builder() {
         state,
         dispatch,
         selectedWidget,
-        heightConfiguredWidgets,
-        onUpdateWidgetHeightConfig: setHeightConfiguredWidgets
+        widgetsConfig,
+        updateWidgetConfig: setWidgetConfig
       };
     },
-    [heightConfiguredWidgets, selectedWidget, state]
+    [widgetsConfig, selectedWidget, state]
   );
+
+  // useEffect(
+  //   function updateSelectedWidget() {
+  //     setActiveWidgetInfo({});
+  //   },
+  //   [selectedWidget]
+  // );
 
   return (
     <BuilderContext.Provider value={storeObj}>
@@ -369,7 +377,6 @@ export function Builder() {
                       : containerRef.current?.clientHeight / ROW_COUNT
                   }
                 />
-
                 <LayoutWidgets
                   widgets={layoutWidgets}
                   selectedWidget={selectedWidget}
@@ -433,7 +440,7 @@ function GeneralConfig({ selectedWidget, generalConfig }) {
     <div className={styles.generalWidgetWrapper}>
       <div>General config</div>
       <ConfigList generalConfig={generalConfig} />
-      <TextInput />
+      {/* <TextInput /> */}
     </div>
   );
 }
@@ -452,8 +459,10 @@ GeneralConfigWidget.propTypes = {
 
 function GeneralConfigWidget({ generalConfig }) {
   switch (generalConfig.type) {
-    case "height":
+    case GENERAL_CONFIG.HEIGHT:
       return <HeightInput type={generalConfig.type} config={generalConfig} />;
+    case GENERAL_CONFIG.TEXT_INPUT:
+      return <TextInput />;
     default:
       return null;
   }

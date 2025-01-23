@@ -15,16 +15,15 @@ HeightInput.propTypes = {
 export function HeightInput({ type, config }) {
   // const [value, setValue] = useState(config["source"][0].value);
 
-  const {
-    selectedWidget,
-    heightConfiguredWidgets,
-    onUpdateWidgetHeightConfig
-  } = useContext(BuilderContext);
+  const { selectedWidget, widgetsConfig, updateWidgetConfig } =
+    useContext(BuilderContext);
 
   function onChange(e, value) {
-    onUpdateWidgetHeightConfig((prevState) => ({
+    updateWidgetConfig((prevState) => ({
       ...prevState,
-      [selectedWidget]: value
+      [selectedWidget]: {
+        heightType: value
+      }
     }));
   }
 
@@ -36,7 +35,7 @@ export function HeightInput({ type, config }) {
         id="MARGIN_TYPE"
         type={CONTROL_TYPE.TOGGLE}
         label="Height"
-        value={heightConfiguredWidgets[selectedWidget] || "fixed"}
+        value={widgetsConfig[selectedWidget]?.heightType || "fixed"}
         onChange={onChange}
         onReset={onChange}
         defaultValue={config["source"][0].value}

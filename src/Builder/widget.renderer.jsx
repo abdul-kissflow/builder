@@ -174,12 +174,11 @@ WidgetHandler.propTypes = {
 };
 
 function WidgetHandler(props) {
-  const { heightConfiguredWidgets, selectedWidget } =
-    useContext(BuilderContext);
+  const { widgetsConfig, selectedWidget } = useContext(BuilderContext);
 
   const { widgetLayoutConfig, widget, cellHeight } = props;
 
-  if (heightConfiguredWidgets[selectedWidget] === "auto") {
+  if (widgetsConfig[selectedWidget]?.heightType === "auto") {
     return (
       <AutogrowWidget
         cellHeight={cellHeight}
@@ -540,25 +539,8 @@ function WidgetRenderer({
 
   return (
     <>
-      <div
-        // ref={resizeObserverRef}
-        className={styles.content}
-        id={widget.Id}
-      >
-        {/* <label>{widget.Id}</label> */}
-        {/* {`H: ${widgetHeightRef ? widgetHeightRef.current : ""}`} */}
-        {/* /* auto grow poc */}
-        {/* {widget.Type === WIDGETS_TYPE.CARD && (
-          <div className={styles.growableChildrenWrapper}>
-            <input value={value} onChange={(e) => setValue(e.target.value)} />
-            <div
-              style={{ height: cardChildHeight }}
-              className={styles.growableChildren}
-            />
-          </div>
-        )} */}
+      <div className={styles.content} id={widget.Id}>
         <span style={{ fontSize: "x-small" }}>{widget.Id}</span>
-        {/* /* auto grow poc */}
       </div>
       <div
         className={`${styles.overlayContainer} ${
