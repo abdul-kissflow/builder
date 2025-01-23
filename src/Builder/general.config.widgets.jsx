@@ -8,15 +8,12 @@ import { CONTROL_TYPE } from "./constant";
 import { BuilderContext } from "./context";
 
 HeightInput.propTypes = {
-  type: PropTypes.string,
   config: PropTypes.shape({
     source: PropTypes.array
   })
 };
 
-export function HeightInput({ type, config }) {
-  // const [value, setValue] = useState(config["source"][0].value);
-
+export function HeightInput({ config }) {
   const { selectedWidget, widgetsConfig, updateWidgetConfig } =
     useContext(BuilderContext);
 
@@ -29,8 +26,6 @@ export function HeightInput({ type, config }) {
       }
     }));
   }
-
-  console.log(type, "Genenral config");
 
   return (
     <div>
@@ -69,7 +64,6 @@ export function TextInput() {
   return (
     <TextArea
       onChange={(e) => {
-        console.log(e.target.value, "value check");
         onChange(e.target.value);
       }}
       value={widgetsConfig[selectedWidget]?.content || ""}
