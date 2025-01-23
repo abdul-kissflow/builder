@@ -30,8 +30,7 @@ import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
 import { BuilderContext } from "./context";
 import { layoutRevalidateAndUpdate } from "./util";
-import { HeightInput } from "./general.config.widgets";
-import TextArea from "antd/es/input/TextArea";
+import { HeightInput, TextInput } from "./general.config.widgets";
 
 const DEFAULT_CONFIG = {
   isAutoResize: false,
@@ -319,13 +318,6 @@ export function Builder() {
     [widgetsConfig, selectedWidget, state]
   );
 
-  // useEffect(
-  //   function updateSelectedWidget() {
-  //     setActiveWidgetInfo({});
-  //   },
-  //   [selectedWidget]
-  // );
-
   return (
     <BuilderContext.Provider value={storeObj}>
       <div className={styles.mainLayout}>
@@ -408,7 +400,7 @@ export function Builder() {
           ) : null} */}
           </DragOverlay>
         </DndContext>
-        <aside>
+        <aside style={{ width: "150px" }}>
           <Config config={configState} setConfig={setConfigState} />
           <GeneralConfig
             selectedWidget={selectedWidget}
@@ -425,13 +417,10 @@ export function Builder() {
 }
 
 GeneralConfig.propTypes = {
-  selectedWidget: PropTypes.string,
   generalConfig: PropTypes.array
 };
 
-function GeneralConfig({ selectedWidget, generalConfig }) {
-  console.log({ selectedWidget, generalConfig }, "selectedWidget");
-
+function GeneralConfig({ generalConfig }) {
   if (generalConfig.length < 0) {
     return null;
   }
@@ -466,12 +455,4 @@ function GeneralConfigWidget({ generalConfig }) {
     default:
       return null;
   }
-}
-
-TextInput.propTypes = {
-  type: PropTypes.string
-};
-
-function TextInput() {
-  return <TextArea placeholder="Autosize" autoSize />;
 }

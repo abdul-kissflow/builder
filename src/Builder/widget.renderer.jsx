@@ -56,6 +56,9 @@ function WidgetCell({
   rowCount,
   marginType
 }) {
+  const { widgetsConfig, selectedWidget } = useContext(BuilderContext);
+  const isAuto = widgetsConfig[widget.Id]?.heightType === "auto";
+
   const { attributes, listeners, setNodeRef } = useDraggable({
     id: widget.Id,
     data: {
@@ -83,11 +86,20 @@ function WidgetCell({
         top: `${rowStart * cellHeight}px`,
         left: `${colStart * cellWidth}px`,
         width: `${widgetColspan * cellWidth}px`,
-        height: `${widgetRowSpan * cellHeight}px`
+        height: !isAuto ? `${widgetRowSpan * cellHeight}px` : "auto"
       };
       return check;
     },
-    [rowStart, cellHeight, colStart, cellWidth, widgetColspan, widgetRowSpan]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      rowStart,
+      cellHeight,
+      colStart,
+      cellWidth,
+      widgetColspan,
+      selectedWidget,
+      widgetRowSpan
+    ]
   );
 
   return (
@@ -119,6 +131,8 @@ function WidgetCell({
       {...attributes}
     >
       <WidgetHandler
+        selectedWidget={selectedWidget}
+        isAuto={isAuto}
         selected={selected}
         rowCount={rowCount}
         cellHeight={cellHeight}
@@ -159,6 +173,8 @@ WidgetCell.propTypes = {
 };
 
 WidgetHandler.propTypes = {
+  isAuto: PropTypes.bool,
+  selectedWidget: PropTypes.string,
   widgetLayoutConfig: PropTypes.shape({
     colStart: PropTypes.number,
     colEnd: PropTypes.number,
@@ -174,11 +190,10 @@ WidgetHandler.propTypes = {
 };
 
 function WidgetHandler(props) {
-  const { widgetsConfig, selectedWidget } = useContext(BuilderContext);
+  const { widgetLayoutConfig, widget, cellHeight, isAuto, selectedWidget } =
+    props;
 
-  const { widgetLayoutConfig, widget, cellHeight } = props;
-
-  if (widgetsConfig[selectedWidget]?.heightType === "auto") {
+  if (isAuto) {
     return (
       <AutogrowWidget
         cellHeight={cellHeight}
@@ -537,10 +552,19 @@ function WidgetRenderer({
     [onWindowMouseMove, onWindowMouseUp]
   );
 
+  const { widgetsConfig } = useContext(BuilderContext);
+
   return (
     <>
       <div className={styles.content} id={widget.Id}>
-        <span style={{ fontSize: "x-small" }}>{widget.Id}</span>
+        <span
+          className={styles.widgetTextField}
+          style={{ fontSize: "x-small" }}
+        >
+          {widgetsConfig[widget.Id]?.content
+            ? widgetsConfig[widget.Id]?.content
+            : ""}
+        </span>
       </div>
       <div
         className={`${styles.overlayContainer} ${

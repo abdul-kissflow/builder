@@ -1,6 +1,8 @@
 import { useContext } from "react";
 import PropTypes from "prop-types";
 
+import TextArea from "antd/es/input/TextArea";
+
 import { Control } from "./control";
 import { CONTROL_TYPE } from "./constant";
 import { BuilderContext } from "./context";
@@ -22,6 +24,7 @@ export function HeightInput({ type, config }) {
     updateWidgetConfig((prevState) => ({
       ...prevState,
       [selectedWidget]: {
+        ...prevState[selectedWidget],
         heightType: value
       }
     }));
@@ -42,5 +45,36 @@ export function HeightInput({ type, config }) {
         options={config["source"]}
       />
     </div>
+  );
+}
+
+TextInput.propTypes = {
+  type: PropTypes.string
+};
+
+export function TextInput() {
+  const { selectedWidget, widgetsConfig, updateWidgetConfig } =
+    useContext(BuilderContext);
+
+  function onChange(value) {
+    updateWidgetConfig((prevState) => ({
+      ...prevState,
+      [selectedWidget]: {
+        ...prevState[selectedWidget],
+        content: value
+      }
+    }));
+  }
+
+  return (
+    <TextArea
+      onChange={(e) => {
+        console.log(e.target.value, "value check");
+        onChange(e.target.value);
+      }}
+      value={widgetsConfig[selectedWidget]?.content || ""}
+      placeholder="Autosize"
+      autoSize
+    />
   );
 }
