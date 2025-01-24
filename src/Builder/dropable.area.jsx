@@ -21,7 +21,7 @@ function DroppableAreaComponent({ colCount, rowCount, rowHeight }) {
       style={{
         height: "100%",
         width: "100%",
-        backgroundImage: `linear-gradient(rgb(220 229 234), rgb(220 229 234)), linear-gradient(0deg, rgb(220 229 234) 1px, transparent 1px, transparent 100%), linear-gradient(rgb(220 229 234), rgb(220 229 234)), linear-gradient(90deg, rgb(220 229 234) 1px, transparent 1px, transparent 100%)`,
+        backgroundImage: `linear-gradient(rgb(241 241 241), rgb(241 241 241)), linear-gradient(0deg, rgb(241 241 241) 1px, transparent 1px, transparent 100%), linear-gradient(rgb(241 241 241), rgb(241 241 241)), linear-gradient(90deg, rgb(241 241 241) 1px, transparent 1px, transparent 100%)`,
         backgroundPosition: `0px 0px, 0px 0px, 100% 0px, 0px 0px`,
         backgroundSize: `100% 1px, 100% ${rowHeight}px, 1px 100%, calc(100% / ${colCount}) 100%`,
         backgroundRepeat: `no-repeat, repeat-y, no-repeat, repeat-x`,

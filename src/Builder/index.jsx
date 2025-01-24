@@ -110,10 +110,28 @@ export function Builder() {
     return model.root.Widgets;
   }
 
+  function updateWidgetsOrder(widgetsList) {
+    return widgetsList.sort((primaryWidget, secondaryWidget) => {
+      const {
+        colStart: primaryWidgetColStart,
+        rowStart: primaryWidgetRowStart
+      } = primaryWidget.LayoutConfig;
+
+      const { colStart: secondaryWidgetColStart, rowStart: secondaryRowStart } =
+        secondaryWidget.LayoutConfig;
+
+      if (primaryWidgetRowStart === secondaryRowStart) {
+        return primaryWidgetColStart - secondaryWidgetColStart; // Sort by y if x values are the same
+      }
+      return primaryWidgetRowStart - secondaryRowStart; // Sort by x
+    });
+  }
+
   function getWidgets(model) {
-    return getWidgetIds(model).map((compId) => {
+    let list = getWidgetIds(model).map((compId) => {
       return model[compId];
     });
+    return updateWidgetsOrder(list);
   }
 
   function setWidget(model, widget) {
@@ -252,6 +270,8 @@ export function Builder() {
   function handleDragEnd(e) {
     const { over, active } = e;
     if (over && over?.data.current.type === "AddCell") {
+      console.log("********* widget dropped *********");
+
       let type = active?.data.current.type;
       let currentWidget = type ? active.data.current.widget : activeWidget;
 
