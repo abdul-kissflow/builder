@@ -2,8 +2,8 @@ export const DELAY_TO_DRAG = 5;
 
 export const INITIAL_CONFIG = {
   COLUMN_COUNT: 36,
-  ROW_COUNT: 100,
-  ROW_HEIGHT: 8,
+  ROW_COUNT: 200,
+  ROW_HEIGHT: 4,
   ROW_HEIGHT_UNIT: "px",
   //to-do: margin type ?
   MARGIN_TYPE: "default"
@@ -19,9 +19,9 @@ export const WIDGETS_TYPE = {
 export let WIDGET_CONFIG = {
   [WIDGETS_TYPE.INPUT]: {
     rowStart: 2,
-    rowEnd: 6,
+    rowEnd: 10,
     colStart: 2,
-    colEnd: 5,
+    colEnd: 7,
     rowSpan: function () {
       let diff = this.rowEnd - this.rowStart;
       return diff;
@@ -33,7 +33,7 @@ export let WIDGET_CONFIG = {
   },
   [WIDGETS_TYPE.DROPDOWN]: {
     rowStart: 0,
-    rowEnd: 4,
+    rowEnd: 8,
     colStart: 0,
     colEnd: 4,
     rowSpan: function () {
@@ -47,7 +47,7 @@ export let WIDGET_CONFIG = {
   },
   [WIDGETS_TYPE.ICON]: {
     rowStart: 0,
-    rowEnd: 3,
+    rowEnd: 9,
     colStart: 0,
     colEnd: 2,
     rowSpan: function () {
@@ -61,7 +61,7 @@ export let WIDGET_CONFIG = {
   },
   [WIDGETS_TYPE.CARD]: {
     rowStart: 2,
-    rowEnd: 8,
+    rowEnd: 15,
     colStart: 2,
     colEnd: 8,
     rowSpan: function () {

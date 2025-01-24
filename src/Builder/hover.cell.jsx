@@ -1,29 +1,31 @@
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 
 import PropTypes from "prop-types";
 
 import styles from "./builder.module.css";
+import { BuilderContext } from "./context";
 
 export function HoverCell({
   colStart,
   rowStart,
-  colEnd,
-  rowEnd,
   rowSpan,
   colSpan,
   cellHeight,
   cellWidth
 }) {
+  const { widgetsConfig, selectedWidget } = useContext(BuilderContext);
+  const isAuto = widgetsConfig[selectedWidget.Id]?.heightType === "auto";
+
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
       return {
         top: `${rowStart * cellHeight}px`,
         left: `${colStart * cellWidth}px`,
         width: `${colSpan * cellWidth}px`,
-        height: `${rowSpan * cellHeight}px`
+        height: !isAuto ? `${rowSpan * cellHeight}px` : "auto"
       };
     },
-    [cellHeight, cellWidth, colSpan, colStart, rowSpan, rowStart]
+    [cellHeight, cellWidth, colSpan, colStart, isAuto, rowSpan, rowStart]
   );
 
   if (isNaN(colStart) || isNaN(rowStart) || isNaN(colSpan) || isNaN(rowSpan)) {
@@ -39,15 +41,13 @@ export function HoverCell({
         // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
       id="hoverCell"
-    >
-      hai
-    </span>
+    ></span>
   );
 }
 
 HoverCell.propTypes = {
-  col: PropTypes.number,
-  row: PropTypes.number,
+  colStart: PropTypes.number,
+  rowStart: PropTypes.number,
   rowSpan: PropTypes.number,
   colSpan: PropTypes.number,
   cellHeight: PropTypes.number,
