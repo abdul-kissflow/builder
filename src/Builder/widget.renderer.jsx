@@ -92,6 +92,7 @@ function WidgetCell({
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      isAuto,
       rowStart,
       cellHeight,
       colStart,

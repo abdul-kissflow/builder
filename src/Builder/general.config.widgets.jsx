@@ -67,7 +67,7 @@ export function TextInput() {
         onChange(e.target.value);
       }}
       value={widgetsConfig[selectedWidget]?.content || ""}
-      placeholder="Autosize"
+      placeholder="Write something here"
       autoSize
     />
   );
