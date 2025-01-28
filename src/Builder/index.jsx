@@ -21,7 +21,8 @@ import {
   DELAY_TO_DRAG,
   GENERAL_CONFIG,
   INITIAL_CONFIG,
-  INITIAL_LAYOUT_WIDGETS_META
+  INITIAL_LAYOUT_WIDGETS_META,
+  WIDGET_ALIGNEMNT_TYPE
 } from "./constant";
 import { LeftNav } from "./leftnav";
 import { DroppableArea } from "./dropable.area";
@@ -42,7 +43,9 @@ const DEFAULT_CONFIG = {
 
 const reducer = (state, action) => {
   switch (action.type) {
-    case "RESIZING":
+    case WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED ||
+      WIDGET_ALIGNEMNT_TYPE.AUTO_GROW ||
+      WIDGET_ALIGNEMNT_TYPE.RESIZING:
       return { ...state, ...action };
     case "STOP":
       console.log("Size stoped", state);
@@ -72,24 +75,26 @@ export function Builder() {
   useEffect(
     function updateLayoutModel() {
       let widgetsList = getWidgets(layoutModel);
-      setLayoutModelWidget(widgetsList);
+
+      let result = layoutRevalidateAndUpdate(widgetsList, state, dispatch);
+      setLayoutModelWidget(result);
     },
-    [layoutModel]
+    [layoutModel, state]
   );
 
-  useEffect(
-    function updateWhileAutoGrow() {
-      if (state.isAutoResize) {
-        let result = layoutRevalidateAndUpdate(
-          layoutModelWidget,
-          state,
-          dispatch
-        );
-        setLayoutModelWidget(result);
-      }
-    },
-    [state.isAutoResize]
-  );
+  // useEffect(
+  //   function updateWhileAutoGrow() {
+  //     if (state.isAutoResize) {
+  //       let result = layoutRevalidateAndUpdate(
+  //         layoutModelWidget,
+  //         state,
+  //         dispatch
+  //       );
+  //       setLayoutModelWidget(result);
+  //     }
+  //   },
+  //   [state, layoutModelWidget.length]
+  // );
 
   const originLayoutModel = useRef(null);
   let containerRef = useRef(null);
@@ -299,10 +304,71 @@ export function Builder() {
           ROW_COUNT: ROW_COUNT + 20
         }));
       }
+
+      if (over.id !== "container001") {
+        let draggingWidgetPosition = active.rect.current.translated;
+        let intersectedWidgetPosition = over.rect;
+
+        let updatedRowCount = calculateIntersectedRowCount(
+          intersectedWidgetPosition,
+          draggingWidgetPosition
+        );
+
+        if (updatedRowCount !== 0) {
+          let isIntersectedAboveMidPoint = checkIsIntersectedAboveMidPoint(
+            draggingWidgetPosition,
+            intersectedWidgetPosition
+          );
+
+          if (isIntersectedAboveMidPoint) {
+            console.log("Dragged widget is above the intersected widget");
+            dispatch({
+              widgetId: widget.Id,
+              type: WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED,
+              isAutoResize: true,
+              updatedRowCount,
+              colEnd,
+              colStart
+            });
+          } else {
+            console.log("Dragged widget is below the intersected widget");
+          }
+        }
+      }
     }
     setIsDragging(false);
     setActiveWidget({});
     setHoverDetail({});
+  }
+
+  function checkIsIntersectedAboveMidPoint(
+    draggingWidgetPosition,
+    intersectedWidgetPosition
+  ) {
+    let draggingWidgetMidPoint =
+      draggingWidgetPosition.top + draggingWidgetPosition.height / 2;
+    let intersectedWidgetMidPoint =
+      intersectedWidgetPosition.top + intersectedWidgetPosition.height / 2;
+
+    return draggingWidgetMidPoint < intersectedWidgetMidPoint;
+  }
+
+  function calculateIntersectedRowCount(
+    intersectedWidgetPosition,
+    draggingWidgetPosition
+  ) {
+    const { top: intersectedWidgetTop } = intersectedWidgetPosition;
+    const { bottom: draggingWidgetBottom } = draggingWidgetPosition;
+
+    let updatedRowCount = 0;
+
+    if (intersectedWidgetTop < draggingWidgetBottom) {
+      updatedRowCount = Math.ceil(
+        (draggingWidgetBottom - intersectedWidgetTop) / ROW_HEIGHT
+      );
+    }
+
+    return updatedRowCount;
   }
 
   function handleDragCancel() {

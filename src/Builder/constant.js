@@ -209,3 +209,10 @@ export const RESIZE_DIRECTION = {
   RIGHT: "right",
   BOTTOM: "bottom"
 };
+
+export const WIDGET_ALIGNEMNT_TYPE = {
+  RESIZING: "RESIZING",
+  AUTO_GROW: "AUTO_GROW",
+  WIDGET_DROPPED: "WIDGET_DROPPED",
+  STOP: "STOP"
+};

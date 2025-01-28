@@ -7,10 +7,10 @@ import {
   useContext
 } from "react";
 import PropTypes from "prop-types";
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 
 import styles from "./builder.module.css";
-import { RESIZE_DIRECTION } from "./constant";
+import { RESIZE_DIRECTION, WIDGET_ALIGNEMNT_TYPE } from "./constant";
 import { BuilderContext } from "./context";
 
 export function LayoutWidgets({
@@ -59,14 +59,6 @@ function WidgetCell({
   const { widgetsConfig, selectedWidget } = useContext(BuilderContext);
   const isAuto = widgetsConfig[widget.Id]?.heightType === "auto";
 
-  const { attributes, listeners, setNodeRef } = useDraggable({
-    id: widget.Id,
-    data: {
-      widget,
-      type: "DragWidgetCell"
-    }
-  });
-
   const [widgetLayoutConfig, setWidgetLayoutConfig] = useState(
     widget.LayoutConfig
   );
@@ -75,6 +67,33 @@ function WidgetCell({
 
   const widgetColspan = widgetLayoutConfig.colSpan();
   const widgetRowSpan = widgetLayoutConfig.rowSpan();
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableNodeRef
+  } = useDraggable({
+    id: widget.Id,
+    data: {
+      widget,
+      type: "DragWidgetCell",
+      ...widgetLayoutConfig
+    }
+  });
+
+  const { setNodeRef: setDroppableNodeRef } = useDroppable({
+    id: widget.Id,
+    data: {
+      id: widget.Id,
+      type: "AddCell",
+      ...widgetLayoutConfig
+    }
+  });
+
+  const setCombinedRef = (node) => {
+    setDraggableNodeRef(node);
+    setDroppableNodeRef(node);
+  };
 
   useEffect(() => {
     setWidgetLayoutConfig(widget.LayoutConfig);
@@ -109,12 +128,8 @@ function WidgetCell({
       style={{
         position: "absolute",
         ...widgetAlignmentProperties
-
-        /* auto grow poc */
-        // height: "auto"
-        // gridArea: `${row + 1} / ${col + 1} / span ${rowSpan} / span ${colSpan}`
       }}
-      ref={setNodeRef}
+      ref={setCombinedRef}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(widget.Id);
@@ -250,7 +265,9 @@ function AutogrowWidget({
       let rowCount = calculateRowCountByHeight(prevHeight, newHeight);
       if (rowCount !== 0) {
         dispatch({
-          type: "RESIZING",
+          type: WIDGET_ALIGNEMNT_TYPE.AUTO_GROW,
+          colStart,
+          colEnd,
           isAutoResize: true,
           rowEnd: rowEnd,
           widgetId: widget.Id,
@@ -258,7 +275,6 @@ function AutogrowWidget({
         });
       }
     }
-    // dispatch({ type: "", updatedRowCount: 0, isAutoResize: false });
   }
 
   useEffect(function onMount() {
@@ -422,7 +438,10 @@ function WidgetRenderer({
 
                 // colSpan: widget.LayoutConfig.colSpan
               });
-              dispatch({ type: "RESIZING", colStart: widgetStartCol });
+              dispatch({
+                type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
+                colStart: widgetStartCol
+              });
             }
             break;
           case RESIZE_DIRECTION.TOP:
@@ -473,7 +492,10 @@ function WidgetRenderer({
                 ...prevState,
                 colEnd: widgetColEnd
               }));
-              dispatch({ type: "RESIZING", colEnd: widgetColEnd });
+              dispatch({
+                type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
+                colEnd: widgetColEnd
+              });
             }
             break;
           case RESIZE_DIRECTION.BOTTOM:
