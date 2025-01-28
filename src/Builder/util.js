@@ -3,14 +3,17 @@ export function getSpanCount(startCell, endCell) {
 }
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
-  return (
-    (updatedWidgetConfig.rowEnd < widgetConfig.rowStart &&
-      updatedWidgetConfig.colStart <= widgetConfig.colStart &&
-      updatedWidgetConfig.colEnd >= widgetConfig.colStart) ||
-    (updatedWidgetConfig.rowEnd < widgetConfig.rowStart &&
-      updatedWidgetConfig.colStart <= widgetConfig.colEnd &&
-      updatedWidgetConfig.colEnd >= widgetConfig.colEnd)
-  );
+  let isBelow = updatedWidgetConfig.rowEnd < widgetConfig.rowStart;
+
+  let isLeft = widgetConfig.colEnd <= updatedWidgetConfig.colStart;
+
+  let isRight = widgetConfig.colStart >= updatedWidgetConfig.colEnd;
+
+  if (!isBelow || isLeft || isRight) {
+    return false;
+  }
+
+  return true;
 }
 
 function updateColumnRange(prevColRange, widgetColRange) {
