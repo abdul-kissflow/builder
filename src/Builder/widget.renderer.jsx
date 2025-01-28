@@ -82,15 +82,13 @@ function WidgetCell({
 
   const widgetAlignmentProperties = useMemo(
     function getWidgetAlignemntProperties() {
-      let check = {
+      return {
         top: `${rowStart * cellHeight}px`,
         left: `${colStart * cellWidth}px`,
         width: `${widgetColspan * cellWidth}px`,
         height: !isAuto ? `${widgetRowSpan * cellHeight}px` : "auto"
       };
-      return check;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isAuto,
       rowStart,
@@ -98,7 +96,6 @@ function WidgetCell({
       colStart,
       cellWidth,
       widgetColspan,
-      selectedWidget,
       widgetRowSpan
     ]
   );
@@ -256,8 +253,7 @@ function AutogrowWidget({
           type: "RESIZING",
           isAutoResize: true,
           rowEnd: rowEnd,
-          colStart,
-          colEnd,
+
           widgetId: widget.Id,
           updatedRowCount: rowCount
         });
@@ -265,6 +261,13 @@ function AutogrowWidget({
     }
     // dispatch({ type: "", updatedRowCount: 0, isAutoResize: false });
   }
+
+  useEffect(function onMount() {
+    dispatch({
+      colStart,
+      colEnd
+    });
+  }, []);
 
   useEffect(() => {
     if (resizeObserverRef.current) {
@@ -381,6 +384,8 @@ function WidgetRenderer({
     [isResizing, onResize, widget.Id, widgetLayoutConfig]
   );
 
+  const { dispatch } = useContext(BuilderContext);
+
   const onWindowMouseMove = useCallback(
     function onWindowMouseMoveFunction(e) {
       if (isResizing) {
@@ -419,15 +424,7 @@ function WidgetRenderer({
 
                 // colSpan: widget.LayoutConfig.colSpan
               });
-              // console.log(
-              //   "move left",
-              //   diff,
-              //   noOfCol,
-              //   isLeft,
-              //   col,
-              //   colSpan,
-              //   minColSpan
-              // );
+              dispatch({ type: "RESIZING", colStart: widgetStartCol });
             }
             break;
           case RESIZE_DIRECTION.TOP:
@@ -452,7 +449,6 @@ function WidgetRenderer({
                 ...prevState,
                 rowStart: widgetRowStart
               }));
-              // console.log("move left", diff, noOfRow, isTop);
             }
             break;
           case RESIZE_DIRECTION.RIGHT:
@@ -479,7 +475,7 @@ function WidgetRenderer({
                 ...prevState,
                 colEnd: widgetColEnd
               }));
-              // console.log("move right", diff, noOfCol, isRight);
+              dispatch({ type: "RESIZING", colEnd: widgetColEnd });
             }
             break;
           case RESIZE_DIRECTION.BOTTOM:
