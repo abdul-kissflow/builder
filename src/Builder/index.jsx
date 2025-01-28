@@ -46,10 +46,9 @@ const reducer = (state, action) => {
       return { ...state, ...action };
     case "STOP":
       console.log("Size stoped", state);
-      return { ...state, ...action };
+      return { ...DEFAULT_CONFIG };
     default:
       return { ...DEFAULT_CONFIG, ...action };
-    // throw new Error();
   }
 };
 

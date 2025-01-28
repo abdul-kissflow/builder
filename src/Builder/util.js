@@ -88,7 +88,7 @@ export function layoutRevalidateAndUpdate(
         }
       }
     });
-    dispatch({ type: "STOP", updatedRowCount: 0, isAutoResize: false });
+    dispatch({ type: "STOP" });
   }
 
   return oldWidgetList;
