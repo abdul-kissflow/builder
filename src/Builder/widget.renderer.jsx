@@ -253,7 +253,6 @@ function AutogrowWidget({
           type: "RESIZING",
           isAutoResize: true,
           rowEnd: rowEnd,
-
           widgetId: widget.Id,
           updatedRowCount: rowCount
         });
@@ -392,7 +391,6 @@ function WidgetRenderer({
         let { colStart, colEnd, rowStart, rowEnd, colSpan, rowSpan } =
           widget.LayoutConfig;
         // let { minColSpan, minRowSpan } = WIDGETS_CONFIG[widget.Type];
-
         switch (resizeDirection.current) {
           case RESIZE_DIRECTION.LEFT:
             {

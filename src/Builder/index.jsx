@@ -270,8 +270,6 @@ export function Builder() {
   function handleDragEnd(e) {
     const { over, active } = e;
     if (over && over?.data.current.type === "AddCell") {
-      console.log("********* widget dropped *********");
-
       let type = active?.data.current.type;
       let currentWidget = type ? active.data.current.widget : activeWidget;
 
