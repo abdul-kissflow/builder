@@ -44,13 +44,16 @@ function updateColumnRange(prevColRange, widgetColRange) {
 
 export function layoutRevalidateAndUpdate(
   widgetsList,
-  updatedWidgetConfig,
+  realignedWidgetConfig,
   dispatch
 ) {
   let oldWidgetList = [...widgetsList];
 
+  let updatedWidgetConfig = { ...realignedWidgetConfig };
+
   let colRangeStart = updatedWidgetConfig.colStart;
   let colRangeEnd = updatedWidgetConfig.colEnd;
+  let rowCount = updatedWidgetConfig.updatedRowCount;
 
   if (updatedWidgetConfig.isAutoResize) {
     oldWidgetList.forEach((widgetInfo) => {
@@ -60,9 +63,9 @@ export function layoutRevalidateAndUpdate(
         if (
           isColumnCollided(
             {
+              ...updatedWidgetConfig,
               colStart: colRangeStart,
-              colEnd: colRangeEnd,
-              ...updatedWidgetConfig
+              colEnd: colRangeEnd
             },
             widgetConfig
           )
@@ -78,8 +81,6 @@ export function layoutRevalidateAndUpdate(
           colRangeStart = colStart;
           colRangeEnd = colEnd;
 
-          let rowCount = updatedWidgetConfig.updatedRowCount;
-
           if (
             updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING
           ) {
@@ -87,6 +88,7 @@ export function layoutRevalidateAndUpdate(
               updatedWidgetConfig,
               widgetInfo.LayoutConfig
             );
+            updatedWidgetConfig.type = "UPDATE_REMAINING_WIDGETS";
           }
           widgetInfo.LayoutConfig["rowStart"] =
             widgetInfo.LayoutConfig["rowStart"] + rowCount;
