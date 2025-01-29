@@ -387,19 +387,37 @@ function WidgetRenderer({
   const resizeDirection = useRef(null);
   const resizeStarting = useRef(null);
 
+  const updatedRowCount = useRef(0);
+
+  const { dispatch } = useContext(BuilderContext);
+
   const onWindowMouseUp = useCallback(
     function onWindowMouseUp() {
+      let { colStart, colEnd } = widget.LayoutConfig;
+
       if (isResizing) {
-        setIsResizing(false);
+        if (
+          resizeDirection.current === RESIZE_DIRECTION.BOTTOM &&
+          updatedRowCount.current !== 0
+        ) {
+          dispatch({
+            isAutoResize: true,
+            type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
+            colStart: colStart,
+            colEnd: colEnd,
+            updatedRowCount: updatedRowCount.current,
+            widgetId: widget.Id
+          });
+        }
+
         onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);
+        setIsResizing(false);
         resizeStarting.current = null;
         resizeDirection.current = null;
       }
     },
-    [isResizing, onResize, widget.Id, widgetLayoutConfig]
+    [dispatch, isResizing, onResize, widget.Id, widgetLayoutConfig]
   );
-
-  const { dispatch } = useContext(BuilderContext);
 
   const onWindowMouseMove = useCallback(
     function onWindowMouseMoveFunction(e) {
@@ -520,7 +538,8 @@ function WidgetRenderer({
                 ...prevState,
                 rowEnd: widgetRowEnd
               }));
-              // console.log("move bottom", diff, noOfRow, isBottom);
+
+              updatedRowCount.current = noOfRow;
             }
             break;
           default:
