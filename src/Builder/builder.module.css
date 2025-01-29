@@ -74,6 +74,9 @@
   cursor: grab;
   position: relative;
   transition: all 0.3s;
+
+  /* auto grow poc */
+  height: auto;
 }
 
 .overlayContainer {
@@ -99,14 +102,19 @@
   border-radius: 4px;
   width: 100%;
   height: 100%;
-  /* overflow: hidden; */
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .widgetCell.defaultMargin .content {
   width: calc(100% - 2 * 8px);
+
+  /* auto grow poc */
   height: calc(100% - 2 * 4px);
+  /* height: auto; */
+  padding: 12px;
+
   margin: 4px 8px;
 }
 
@@ -254,4 +262,32 @@
 
 .overlayContainer.resizing .resizer:not([data-active="true"])::after {
   display: none;
+}
+
+.growableChildrenWrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.growableChildrenWrapper > input {
+  width: 100%;
+  flex: 0 0 100%;
+}
+
+.growableChildren {
+  border: 1px solid brown;
+  background-color: pink;
+}
+
+.generalWidgetWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-inline: 12px;
+  padding-block: 20px;
+}
+
+.widgetTextField {
+  overflow-wrap: anywhere;
 }
