@@ -249,7 +249,7 @@ function AutogrowWidget({
   const resizeObserverRef = useRef(null);
   const resizeTimeout = useRef(null);
 
-  const { rowStart, colStart, colEnd } = widgetLayoutConfig;
+  const { rowStart, rowEnd, colStart, colEnd } = widgetLayoutConfig;
 
   const widgetHeightRef = useRef(null);
 
@@ -270,6 +270,7 @@ function AutogrowWidget({
           colEnd,
           isAutoResize: true,
           rowStart: rowStart,
+          rowEnd,
           widgetId: widget.Id,
           updatedRowCount: rowCount
         });
@@ -393,7 +394,7 @@ function WidgetRenderer({
 
   const onWindowMouseUp = useCallback(
     function onWindowMouseUp() {
-      let { colStart, colEnd, rowStart } = widgetLayoutConfig;
+      let { colStart, colEnd, rowStart, rowEnd } = widgetLayoutConfig;
 
       if (isResizing) {
         switch (resizeDirection.current) {
@@ -403,6 +404,7 @@ function WidgetRenderer({
               type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
               colStart: colStart,
               colEnd: colEnd,
+              rowEnd,
               rowStart: rowStart,
               updatedRowCount: updatedRowCount.current,
               widgetId: widget.Id
@@ -418,6 +420,7 @@ function WidgetRenderer({
               type: WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING,
               colStart: colStart,
               colEnd: colEnd,
+              rowEnd: rowEnd,
               rowStart: rowStart,
               widgetId: widget.Id
             });

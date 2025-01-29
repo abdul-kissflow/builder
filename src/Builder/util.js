@@ -5,7 +5,7 @@ export function getSpanCount(startCell, endCell) {
 }
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
-  let isAbove = updatedWidgetConfig.rowStart > widgetConfig.rowEnd;
+  let isAbove = updatedWidgetConfig.rowStart > widgetConfig.rowStart;
 
   let isLeft = widgetConfig.colEnd <= updatedWidgetConfig.colStart;
 

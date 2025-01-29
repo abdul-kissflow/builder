@@ -321,7 +321,8 @@ export function Builder() {
               updatedRowCount,
               colEnd,
               colStart,
-              rowStart
+              rowStart,
+              rowEnd
             });
           }
         } else {
@@ -340,6 +341,17 @@ export function Builder() {
                 rowEnd: rowEnd + collisionRowCount
               }
             };
+
+            dispatch({
+              widgetId: widget.Id,
+              type: WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED,
+              isAutoResize: true,
+              updatedRowCount: collisionRowCount,
+              colEnd,
+              colStart,
+              rowStart,
+              rowEnd
+            });
           }
         }
       }
