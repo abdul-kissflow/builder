@@ -82,7 +82,8 @@ export function layoutRevalidateAndUpdate(
           colRangeEnd = colEnd;
 
           if (
-            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING ||
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.RESIZING
           ) {
             let shouldMove = shouldMoveCollideddWidget(
               updatedWidgetConfig,
