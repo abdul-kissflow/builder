@@ -84,10 +84,15 @@ export function layoutRevalidateAndUpdate(
           if (
             updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING
           ) {
-            rowCount = getCollisionRowCountFromCrossAxis(
+            let collidedWidgetInfo = getCollisionRowCountFromCrossAxis(
               updatedWidgetConfig,
               widgetInfo.LayoutConfig
             );
+
+            colRangeEnd = collidedWidgetInfo.colEnd;
+            colRangeStart = collidedWidgetInfo.colStart;
+            rowCount = collidedWidgetInfo.rowCount;
+
             updatedWidgetConfig.type = "UPDATE_REMAINING_WIDGETS";
           }
           widgetInfo.LayoutConfig["rowStart"] =
@@ -119,7 +124,11 @@ function getCollisionRowCountFromCrossAxis(resizingWidget, collidedWidget) {
   if (resizingWidget.rowEnd > collidedWidget.rowStart) {
     rowCount = Math.ceil(rowEndingRange - collidedWidget.rowStart);
   }
-  return rowCount;
+  return {
+    rowCount,
+    colStart: collidedWidget.colStart,
+    colEnd: collidedWidget.colEnd
+  };
 }
 
 export function getCollisionRowCountFromBottom(
