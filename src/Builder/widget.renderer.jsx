@@ -559,7 +559,7 @@ function WidgetRenderer({
                 rowEnd: widgetRowEnd
               }));
 
-              updatedRowCount.current = noOfRow;
+              updatedRowCount.current = Math.round(diff / cellHeight);
             }
             break;
           default:
