@@ -427,7 +427,7 @@ function WidgetRenderer({
 
             break;
           default:
-            return null;
+            break;
         }
 
         onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);

@@ -5,7 +5,7 @@ export function getSpanCount(startCell, endCell) {
 }
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
-  let isAbove = updatedWidgetConfig.rowStart > widgetConfig.rowStart;
+  let isAbove = updatedWidgetConfig.rowStart >= widgetConfig.rowEnd;
 
   let isLeft = widgetConfig.colEnd <= updatedWidgetConfig.colStart;
 
@@ -84,17 +84,23 @@ export function layoutRevalidateAndUpdate(
           if (
             updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING
           ) {
-            let collidedWidgetInfo = getCollisionRowCountFromCrossAxis(
+            let shouldMove = shouldMoveCollideddWidget(
               updatedWidgetConfig,
               widgetInfo.LayoutConfig
             );
 
-            colRangeEnd = collidedWidgetInfo.colEnd;
-            colRangeStart = collidedWidgetInfo.colStart;
-            rowCount = collidedWidgetInfo.rowCount;
+            if (shouldMove) {
+              let rowValueToMove = updatedWidgetConfig.rowEnd;
 
-            updatedWidgetConfig.type = "UPDATE_REMAINING_WIDGETS";
+              let noOfRows = rowValueToMove - widgetInfo.LayoutConfig.rowStart;
+
+              rowCount = noOfRows;
+              colRangeEnd = widgetInfo.LayoutConfig.colEnd;
+              colRangeStart = widgetInfo.LayoutConfig.colStart;
+              updatedWidgetConfig.type = "UPDATE_REMAINING_WIDGETS";
+            }
           }
+
           widgetInfo.LayoutConfig["rowStart"] =
             widgetInfo.LayoutConfig["rowStart"] + rowCount;
 
@@ -113,22 +119,15 @@ export function layoutRevalidateAndUpdate(
 
 // COMMON UTILS
 
-function getCollisionRowCountFromCrossAxis(resizingWidget, collidedWidget) {
-  let rowCount = 0;
-
-  let rowEndingRange =
-    resizingWidget.rowEnd > collidedWidget.rowEnd
-      ? resizingWidget.rowEnd
-      : collidedWidget.rowEnd;
-
-  if (resizingWidget.rowEnd > collidedWidget.rowStart) {
-    rowCount = Math.ceil(rowEndingRange - collidedWidget.rowStart);
-  }
-  return {
-    rowCount,
-    colStart: collidedWidget.colStart,
-    colEnd: collidedWidget.colEnd
-  };
+function shouldMoveCollideddWidget(resizingWidget, collidedWidget) {
+  return (
+    (resizingWidget.rowStart <= collidedWidget.rowStart &&
+      resizingWidget.rowEnd >= collidedWidget.rowStart) ||
+    (resizingWidget.rowStart <= collidedWidget.rowEnd &&
+      resizingWidget.rowEnd >= collidedWidget.rowEnd) ||
+    (resizingWidget.rowStart > collidedWidget.rowStart &&
+      resizingWidget.rowEnd < collidedWidget.rowEnd)
+  );
 }
 
 export function getCollisionRowCountFromBottom(
