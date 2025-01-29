@@ -321,7 +321,7 @@ export function Builder() {
               updatedRowCount,
               colEnd,
               colStart,
-              rowEnd
+              rowStart
             });
           }
         } else {
