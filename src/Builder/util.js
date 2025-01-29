@@ -3,7 +3,7 @@ export function getSpanCount(startCell, endCell) {
 }
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
-  let isAbove = widgetConfig.rowEnd <= updatedWidgetConfig.rowStart;
+  let isAbove = updatedWidgetConfig.rowEnd > widgetConfig.rowStart;
 
   let isLeft = widgetConfig.colEnd <= updatedWidgetConfig.colStart;
 
@@ -92,4 +92,44 @@ export function layoutRevalidateAndUpdate(
   }
 
   return oldWidgetList;
+}
+
+// COMMON UTILS
+
+export function getCollisionRowCountFromBottom(
+  intersectedWidgetPosition,
+  draggingWidgetPosition,
+  rowHeight
+) {
+  const { bottom: intersectedWidgetBottom } = intersectedWidgetPosition;
+  const { top: draggingWidgetTop } = draggingWidgetPosition;
+
+  let updatedRowCount = 0;
+
+  if (intersectedWidgetBottom > draggingWidgetTop) {
+    updatedRowCount = Math.ceil(
+      (intersectedWidgetBottom - draggingWidgetTop) / rowHeight
+    );
+  }
+
+  return updatedRowCount;
+}
+
+export function getCollisionRowCountFromTop(
+  intersectedWidgetPosition,
+  draggingWidgetPosition,
+  rowHeight
+) {
+  const { top: intersectedWidgetTop } = intersectedWidgetPosition;
+  const { bottom: draggingWidgetBottom } = draggingWidgetPosition;
+
+  let updatedRowCount = 0;
+
+  if (intersectedWidgetTop < draggingWidgetBottom) {
+    updatedRowCount = Math.ceil(
+      (draggingWidgetBottom - intersectedWidgetTop) / rowHeight
+    );
+  }
+
+  return updatedRowCount;
 }

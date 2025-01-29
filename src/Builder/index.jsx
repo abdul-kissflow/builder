@@ -30,7 +30,11 @@ import { LayoutWidgets } from "./widget.renderer";
 import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
 import { BuilderContext } from "./context";
-import { layoutRevalidateAndUpdate } from "./util";
+import {
+  getCollisionRowCountFromBottom,
+  getCollisionRowCountFromTop,
+  layoutRevalidateAndUpdate
+} from "./util";
 import { HeightInput, TextInput } from "./general.config.widgets";
 
 const DEFAULT_CONFIG = {
@@ -295,33 +299,24 @@ export function Builder() {
           colEnd: colEnd
         }
       };
-      let newLayoutModel = setWidget(layoutModel, widget);
-      setLayoutModel(newLayoutModel);
-      setSelectedWidget(widget.Id);
-      if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - rowEnd < 10) {
-        setConfigState((prevState) => ({
-          ...prevState,
-          ROW_COUNT: ROW_COUNT + 20
-        }));
-      }
 
       if (over.id !== "container001") {
         let draggingWidgetPosition = active.rect.current.translated;
         let intersectedWidgetPosition = over.rect;
 
-        let updatedRowCount = calculateIntersectedRowCount(
-          intersectedWidgetPosition,
-          draggingWidgetPosition
+        let isIntersectedAboveMidPoint = checkIsIntersectedAboveMidPoint(
+          draggingWidgetPosition,
+          intersectedWidgetPosition
         );
 
-        if (updatedRowCount !== 0) {
-          let isIntersectedAboveMidPoint = checkIsIntersectedAboveMidPoint(
+        if (isIntersectedAboveMidPoint) {
+          let updatedRowCount = getCollisionRowCountFromTop(
+            intersectedWidgetPosition,
             draggingWidgetPosition,
-            intersectedWidgetPosition
+            ROW_HEIGHT
           );
-
-          if (isIntersectedAboveMidPoint) {
-            console.log("Dragged widget is above the intersected widget");
+          console.log("Dragged widget is above the intersected widget");
+          if (updatedRowCount !== 0) {
             dispatch({
               widgetId: widget.Id,
               type: WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED,
@@ -330,9 +325,35 @@ export function Builder() {
               colEnd,
               colStart
             });
-          } else {
+          }
+        } else {
+          let collisionRowCount = getCollisionRowCountFromBottom(
+            intersectedWidgetPosition,
+            draggingWidgetPosition,
+            ROW_HEIGHT
+          );
+
+          if (collisionRowCount !== 0) {
+            widget = {
+              ...widget,
+              LayoutConfig: {
+                ...widget.LayoutConfig,
+                rowStart: rowStart + collisionRowCount,
+                rowEnd: rowEnd + collisionRowCount
+              }
+            };
             console.log("Dragged widget is below the intersected widget");
           }
+        }
+
+        let newLayoutModel = setWidget(layoutModel, widget);
+        setLayoutModel(newLayoutModel);
+        setSelectedWidget(widget.Id);
+        if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - rowEnd < 10) {
+          setConfigState((prevState) => ({
+            ...prevState,
+            ROW_COUNT: ROW_COUNT + 20
+          }));
         }
       }
     }
@@ -351,24 +372,6 @@ export function Builder() {
       intersectedWidgetPosition.top + intersectedWidgetPosition.height / 2;
 
     return draggingWidgetMidPoint < intersectedWidgetMidPoint;
-  }
-
-  function calculateIntersectedRowCount(
-    intersectedWidgetPosition,
-    draggingWidgetPosition
-  ) {
-    const { top: intersectedWidgetTop } = intersectedWidgetPosition;
-    const { bottom: draggingWidgetBottom } = draggingWidgetPosition;
-
-    let updatedRowCount = 0;
-
-    if (intersectedWidgetTop < draggingWidgetBottom) {
-      updatedRowCount = Math.ceil(
-        (draggingWidgetBottom - intersectedWidgetTop) / ROW_HEIGHT
-      );
-    }
-
-    return updatedRowCount;
   }
 
   function handleDragCancel() {
