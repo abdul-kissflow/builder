@@ -406,7 +406,7 @@ function WidgetRenderer({
               colEnd: colEnd,
               rowEnd,
               rowStart: rowStart,
-              updatedRowCount: updatedRowCount.current,
+              // updatedRowCount: updatedRowCount.current,
               widgetId: widget.Id
             });
 
@@ -427,7 +427,7 @@ function WidgetRenderer({
 
             break;
           default:
-            return null;
+            break;
         }
 
         onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);

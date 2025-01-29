@@ -29,11 +29,7 @@ import { LayoutWidgets } from "./widget.renderer";
 import { HoverCell } from "./hover.cell";
 import { Config } from "./config";
 import { BuilderContext } from "./context";
-import {
-  getCollisionRowCountFromBottom,
-  getCollisionRowCountFromTop,
-  layoutRevalidateAndUpdate
-} from "./util";
+import { layoutRevalidateAndUpdate } from "./util";
 import { HeightInput, TextInput } from "./general.config.widgets";
 
 const DEFAULT_CONFIG = {
@@ -308,49 +304,36 @@ export function Builder() {
         );
 
         if (isIntersectedAboveMidPoint) {
-          let updatedRowCount = getCollisionRowCountFromTop(
-            intersectedWidgetPosition,
-            draggingWidgetPosition,
-            ROW_HEIGHT
-          );
-          if (updatedRowCount !== 0) {
-            dispatch({
-              widgetId: widget.Id,
-              type: WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED,
-              isAutoResize: true,
-              updatedRowCount,
-              colEnd,
-              colStart,
-              rowStart,
-              rowEnd
-            });
-          }
+          dispatch({
+            widgetId: widget.Id,
+            type: WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED,
+            isAutoResize: true,
+            colEnd,
+            colStart,
+            rowStart,
+            rowEnd
+          });
         } else {
-          let collisionRowCount = getCollisionRowCountFromBottom(
-            intersectedWidgetPosition,
-            draggingWidgetPosition,
-            ROW_HEIGHT
-          );
+          let collisionRowCount = over.data.current.rowEnd - rowStart;
 
           if (collisionRowCount !== 0) {
             widget = {
               ...widget,
               LayoutConfig: {
                 ...widget.LayoutConfig,
-                rowStart: rowStart + collisionRowCount,
+                rowStart: over.data.current.rowEnd,
                 rowEnd: rowEnd + collisionRowCount
               }
             };
 
             dispatch({
               widgetId: widget.Id,
-              type: WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED,
+              type: WIDGET_ALIGNEMNT_TYPE.BELOW_MIDPOINT,
               isAutoResize: true,
-              updatedRowCount: collisionRowCount,
               colEnd,
               colStart,
-              rowStart,
-              rowEnd
+              rowStart: over.data.current.rowEnd,
+              rowEnd: rowEnd + collisionRowCount
             });
           }
         }
