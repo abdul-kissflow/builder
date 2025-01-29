@@ -345,16 +345,16 @@ export function Builder() {
             console.log("Dragged widget is below the intersected widget");
           }
         }
+      }
 
-        let newLayoutModel = setWidget(layoutModel, widget);
-        setLayoutModel(newLayoutModel);
-        setSelectedWidget(widget.Id);
-        if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - rowEnd < 10) {
-          setConfigState((prevState) => ({
-            ...prevState,
-            ROW_COUNT: ROW_COUNT + 20
-          }));
-        }
+      let newLayoutModel = setWidget(layoutModel, widget);
+      setLayoutModel(newLayoutModel);
+      setSelectedWidget(widget.Id);
+      if (ROW_HEIGHT_UNIT === "px" && ROW_COUNT - rowEnd < 10) {
+        setConfigState((prevState) => ({
+          ...prevState,
+          ROW_COUNT: ROW_COUNT + 20
+        }));
       }
     }
     setIsDragging(false);
