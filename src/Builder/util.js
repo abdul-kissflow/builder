@@ -1,15 +1,17 @@
+import { WIDGET_ALIGNEMNT_TYPE } from "./constant";
+
 export function getSpanCount(startCell, endCell) {
   return endCell - startCell;
 }
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
-  let isAbove = updatedWidgetConfig.rowEnd > widgetConfig.rowStart;
+  // let isAbove = updatedWidgetConfig.rowEnd < widgetConfig.rowStart;
 
   let isLeft = widgetConfig.colEnd <= updatedWidgetConfig.colStart;
 
   let isRight = widgetConfig.colStart >= updatedWidgetConfig.colEnd;
 
-  if (isAbove || isLeft || isRight) {
+  if (isLeft || isRight) {
     return false;
   }
 
@@ -76,15 +78,23 @@ export function layoutRevalidateAndUpdate(
           colRangeStart = colStart;
           colRangeEnd = colEnd;
 
+          let rowCount = updatedWidgetConfig.updatedRowCount;
+
+          if (
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING
+          ) {
+            rowCount = getCollisionRowCountFromCrossAxis(
+              updatedWidgetConfig,
+              widgetInfo.LayoutConfig
+            );
+          }
           widgetInfo.LayoutConfig["rowStart"] =
-            widgetInfo.LayoutConfig["rowStart"] +
-            updatedWidgetConfig.updatedRowCount;
+            widgetInfo.LayoutConfig["rowStart"] + rowCount;
 
           widgetInfo.LayoutConfig["rowEnd"] =
-            widgetInfo.LayoutConfig["rowEnd"] +
-            updatedWidgetConfig.updatedRowCount;
+            widgetInfo.LayoutConfig["rowEnd"] + rowCount;
         } else {
-          console.log("diff col widget", widgetInfo.Id);
+          // console.log("diff col widget", widgetInfo.Id);
         }
       }
     });
@@ -95,6 +105,20 @@ export function layoutRevalidateAndUpdate(
 }
 
 // COMMON UTILS
+
+function getCollisionRowCountFromCrossAxis(resizingWidget, collidedWidget) {
+  let rowCount = 0;
+
+  let rowEndingRange =
+    resizingWidget.rowEnd > collidedWidget.rowEnd
+      ? resizingWidget.rowEnd
+      : collidedWidget.rowEnd;
+
+  if (resizingWidget.rowEnd > collidedWidget.rowStart) {
+    rowCount = Math.ceil(rowEndingRange - collidedWidget.rowStart);
+  }
+  return rowCount;
+}
 
 export function getCollisionRowCountFromBottom(
   intersectedWidgetPosition,

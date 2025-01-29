@@ -153,12 +153,10 @@ export function Builder() {
         colMap[col][row] = Id;
       }
     });
-    console.log("widgetColMap trigerred");
     return colMap;
   }
 
   function handleDragStart(e) {
-    console.log("start", e, e.active.rect.current);
     setIsDragging(true);
     let widget = e.active.data.current.widget;
     let type = e.active?.data.current.type;
@@ -192,7 +190,6 @@ export function Builder() {
   }
 
   function handleDragOver(e) {
-    console.log("over", e);
     if (!e.over) {
       return;
     }
@@ -209,7 +206,7 @@ export function Builder() {
       let overWidgetId = tempWidgetColMap.current[col][row];
 
       if (overWidgetId || row < currentColMap.length) {
-        console.log("within filled", e.over.data.current.cell, currentColMap);
+        // console.log("within filled", e.over.data.current.cell, currentColMap);
         let firstFreeIndex = currentColMap.findIndex((i) => i === null);
         if (firstFreeIndex !== -1) {
           const { movableRow, movableCol } = getMovableCell({
@@ -238,7 +235,7 @@ export function Builder() {
             rowSpan,
             colSpan
           });
-          console.log("isOver widget", slideWidgets, movableRow, movableCol);
+          // console.log("isOver widget", slideWidgets, movableRow, movableCol);
           let uniqueSlideWidgets = new Set(slideWidgets);
 
           uniqueSlideWidgets.forEach((widgetId) => {
@@ -257,11 +254,11 @@ export function Builder() {
             rowSpan,
             colSpan
           });
-          console.log(
-            "isOverWidget layoutModel change",
-            newLayoutModel,
-            tempWidgetColMap.current[col]
-          );
+          // console.log(
+          //   "isOverWidget layoutModel change",
+          //   newLayoutModel,
+          //   tempWidgetColMap.current[col]
+          // );
           isLayoutModelChanged.current = true;
           tempWidgetColMap.current = getWidgetsColMap(newLayoutModel);
           setLayoutModel(newLayoutModel);
@@ -288,13 +285,13 @@ export function Builder() {
           rowSpan,
           colSpan
         });
-        console.log("hover", hoverRow);
+        // console.log("hover", hoverRow);
       }
     }
   }
 
   function handleDragEnd(e) {
-    console.log("end", e);
+    // console.log("end", e);
     const { over, active } = e;
     if (over && over?.data.current.type === "AddCell") {
       let type = active?.data.current.type;
@@ -332,7 +329,7 @@ export function Builder() {
       //     }
       //   }
       // ];
-      console.log("DragEnd - layoutModel", newLayoutModel);
+      // console.log("DragEnd - layoutModel", newLayoutModel);
 
       setLayoutModel(newLayoutModel);
     }
@@ -342,7 +339,7 @@ export function Builder() {
   }
 
   function handleDragCancel(e) {
-    console.log("cancel", e);
+    // console.log("cancel", e);
     setIsDragging(false);
     setActiveWidget({});
     setHoverDetail({});

@@ -393,22 +393,38 @@ function WidgetRenderer({
 
   const onWindowMouseUp = useCallback(
     function onWindowMouseUp() {
-      let { colStart, colEnd, rowEnd } = widget.LayoutConfig;
+      let { colStart, colEnd, rowEnd } = widgetLayoutConfig;
 
       if (isResizing) {
-        if (
-          resizeDirection.current === RESIZE_DIRECTION.BOTTOM &&
-          updatedRowCount.current !== 0
-        ) {
-          dispatch({
-            isAutoResize: true,
-            type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
-            colStart: colStart,
-            colEnd: colEnd,
-            rowEnd: rowEnd,
-            updatedRowCount: updatedRowCount.current,
-            widgetId: widget.Id
-          });
+        switch (resizeDirection.current) {
+          case RESIZE_DIRECTION.BOTTOM:
+            dispatch({
+              isAutoResize: true,
+              type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
+              colStart: colStart,
+              colEnd: colEnd,
+              rowEnd: rowEnd,
+              updatedRowCount: updatedRowCount.current,
+              widgetId: widget.Id
+            });
+
+            break;
+          case RESIZE_DIRECTION.LEFT:
+          case RESIZE_DIRECTION.RIGHT:
+            console.log("left right", widgetLayoutConfig);
+
+            dispatch({
+              isAutoResize: true,
+              type: WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING,
+              colStart: colStart,
+              colEnd: colEnd,
+              rowEnd: rowEnd,
+              widgetId: widget.Id
+            });
+
+            break;
+          default:
+            return null;
         }
 
         onResize(widget.Id, widgetLayoutConfig, resizeDirection.current);
@@ -459,7 +475,10 @@ function WidgetRenderer({
               });
               dispatch({
                 type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
-                colStart: widgetStartCol
+                colStart: widgetStartCol,
+                colEnd: colEnd,
+                rowEnd: rowEnd,
+                isAutoResize: true
               });
             }
             break;

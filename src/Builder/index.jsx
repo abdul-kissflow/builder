@@ -9,7 +9,6 @@ import {
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
   useSensor,
   MouseSensor,
   useSensors
@@ -49,10 +48,10 @@ const reducer = (state, action) => {
   switch (action.type) {
     case WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED ||
       WIDGET_ALIGNEMNT_TYPE.AUTO_GROW ||
-      WIDGET_ALIGNEMNT_TYPE.RESIZING:
+      WIDGET_ALIGNEMNT_TYPE.RESIZING ||
+      WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING:
       return { ...state, ...action };
     case "STOP":
-      console.log("Size stoped", state);
       return { ...DEFAULT_CONFIG };
     default:
       return { ...DEFAULT_CONFIG, ...action };
@@ -175,7 +174,6 @@ export function Builder() {
   }
 
   function handleDragStart(e) {
-    console.log(e, " ******** handleDragStart ********");
     let widget = e.active.data.current.widget;
     const dragWidget = document.querySelector(`[id=${widget.Id}]`);
 
@@ -315,7 +313,6 @@ export function Builder() {
             draggingWidgetPosition,
             ROW_HEIGHT
           );
-          console.log("Dragged widget is above the intersected widget");
           if (updatedRowCount !== 0) {
             dispatch({
               widgetId: widget.Id,
@@ -323,7 +320,8 @@ export function Builder() {
               isAutoResize: true,
               updatedRowCount,
               colEnd,
-              colStart
+              colStart,
+              rowEnd
             });
           }
         } else {
@@ -342,7 +340,6 @@ export function Builder() {
                 rowEnd: rowEnd + collisionRowCount
               }
             };
-            console.log("Dragged widget is below the intersected widget");
           }
         }
       }
@@ -399,6 +396,7 @@ export function Builder() {
   const storeObj = useMemo(
     function getStoreObj() {
       return {
+        config,
         state,
         dispatch,
         selectedWidget,
@@ -406,7 +404,7 @@ export function Builder() {
         updateWidgetConfig: setWidgetConfig
       };
     },
-    [widgetsConfig, selectedWidget, state]
+    [widgetsConfig, selectedWidget, state, config]
   );
 
   return (
@@ -419,7 +417,6 @@ export function Builder() {
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
-          collisionDetection={closestCorners}
         >
           <div className={styles.mainContainer}>
             <LeftNav />
