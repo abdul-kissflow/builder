@@ -393,7 +393,7 @@ function WidgetRenderer({
 
   const onWindowMouseUp = useCallback(
     function onWindowMouseUp() {
-      let { colStart, colEnd } = widget.LayoutConfig;
+      let { colStart, colEnd, rowEnd } = widget.LayoutConfig;
 
       if (isResizing) {
         if (
@@ -405,6 +405,7 @@ function WidgetRenderer({
             type: WIDGET_ALIGNEMNT_TYPE.RESIZING,
             colStart: colStart,
             colEnd: colEnd,
+            rowEnd: rowEnd,
             updatedRowCount: updatedRowCount.current,
             widgetId: widget.Id
           });
