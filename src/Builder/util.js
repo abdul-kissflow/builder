@@ -5,13 +5,13 @@ export function getSpanCount(startCell, endCell) {
 }
 
 function isColumnCollided(updatedWidgetConfig, widgetConfig) {
-  // let isAbove = updatedWidgetConfig.rowEnd < widgetConfig.rowStart;
+  let isBelow = updatedWidgetConfig.rowEnd < widgetConfig.rowStart;
 
   let isLeft = widgetConfig.colEnd <= updatedWidgetConfig.colStart;
 
   let isRight = widgetConfig.colStart >= updatedWidgetConfig.colEnd;
 
-  if (isLeft || isRight) {
+  if (!isBelow || isLeft || isRight) {
     return false;
   }
 
@@ -67,7 +67,7 @@ export function layoutRevalidateAndUpdate(
               colStart: colRangeStart,
               colEnd: colRangeEnd
             },
-            widgetConfig
+            { ...widgetConfig, id: widgetInfo.Id }
           )
         ) {
           let { colStart, colEnd } = updateColumnRange(
