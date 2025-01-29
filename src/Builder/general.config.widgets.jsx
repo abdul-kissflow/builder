@@ -63,12 +63,12 @@ export function TextInput() {
 
   return (
     <TextArea
+      rows={4}
       onChange={(e) => {
         onChange(e.target.value);
       }}
       value={widgetsConfig[selectedWidget]?.content || ""}
       placeholder="Write something here"
-      autoSize
     />
   );
 }

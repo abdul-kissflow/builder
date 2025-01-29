@@ -67,7 +67,9 @@ export function layoutRevalidateAndUpdate(
               colStart: colRangeStart,
               colEnd: colRangeEnd
             },
-            { ...widgetConfig, id: widgetInfo.Id }
+            { ...widgetConfig, id: widgetInfo.Id },
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.BELOW_MIDPOINT &&
+              updatedWidgetConfig.rowEnd < widgetConfig.rowStart
           )
         ) {
           let { colStart, colEnd } = updateColumnRange(
@@ -83,7 +85,9 @@ export function layoutRevalidateAndUpdate(
 
           if (
             updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.CROSS_RESIZING ||
-            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.RESIZING
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.RESIZING ||
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.WIDGET_DROPPED ||
+            updatedWidgetConfig.type === WIDGET_ALIGNEMNT_TYPE.BELOW_MIDPOINT
           ) {
             let shouldMove = shouldMoveCollideddWidget(
               updatedWidgetConfig,
